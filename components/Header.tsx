@@ -1,31 +1,38 @@
+'use client';
+
 export default function Header() {
   return (
     <>
       {/* Top Header - Dark Blue */}
-      <header className="bg-[#2c3e50] text-white">
+      <header className="bg-[#2c3e50] text-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Top Bar with Contact Info */}
-          <div className="flex justify-between items-center py-2 text-sm">
-            <div className="flex-1"></div>
-            <div className="flex gap-4">
-              <span>02 943 18 40 ----------- 088 247 11 79 ------</span>
-              <span>Телефон /централа/ -------- При бедствия и аварии:08-17ч</span>
-            </div>
-          </div>
-
           {/* Main Header with Logo */}
-          <div className="flex items-center py-4">
-            <div className="flex items-center gap-4">
-              {/* Logo placeholder - you can replace with actual logo */}
-              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center">
-                <span className="text-[#2c3e50] font-bold text-xs text-center leading-tight">
-                  <span className="block">СО</span>
-                  <span className="block">Оборище</span>
-                </span>
+          <div className="flex items-center py-4 relative">
+            {/* Logo - overlaps into content area */}
+            <div className="relative z-10">
+              <div className="w-32 h-40 -mb-8">
+                {/* Replace this placeholder with actual logo from /public/logo.png */}
+                <img 
+                  src="/logo.png" 
+                  alt="СО Оборище" 
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    // Fallback if logo.png doesn't exist
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                {/* Fallback placeholder - hidden by default, shown if image fails */}
+                <div className="hidden w-32 h-40 bg-white rounded-lg flex items-center justify-center shadow-lg border-4 border-yellow-400">
+                  <span className="text-[#2c3e50] font-bold text-sm text-center leading-tight">
+                    <span className="block">СО</span>
+                    <span className="block">Оборище</span>
+                  </span>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold">Район Оборище</h1>
-              </div>
+            </div>
+            <div className="ml-6">
+              <h1 className="text-xl font-bold">Район Оборище</h1>
             </div>
           </div>
         </div>
@@ -36,31 +43,7 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-6 py-3">
             <a href="/" className="text-white hover:text-gray-200 text-sm font-medium">
-              ЗА НАС
-            </a>
-            <a href="/" className="text-white hover:text-gray-200 text-sm font-medium">
-              УСЛУГИ
-            </a>
-            <a href="/" className="text-white hover:text-gray-200 text-sm font-medium">
-              ОБРАЗОВАНИЕ
-            </a>
-            <a href="/" className="text-white hover:text-gray-200 text-sm font-medium">
-              КУЛТУРА
-            </a>
-            <a href="/" className="text-white hover:text-gray-200 text-sm font-medium">
-              СИГНАЛИ
-            </a>
-            <a href="/" className="text-white hover:text-gray-200 text-sm font-medium">
-              ИЗБОРИ
-            </a>
-            <a href="/" className="text-white hover:text-gray-200 text-sm font-medium">
-              АНТИКОРУПЦИЯ
-            </a>
-            <a href="/" className="text-white hover:text-gray-200 text-sm font-medium">
-              ДОСТЪП ДО ОИ
-            </a>
-            <a href="/" className="text-white hover:text-gray-200 text-sm font-medium">
-              СМЕТОСЪБИРАНЕ
+              НАЧАЛО
             </a>
           </div>
         </div>

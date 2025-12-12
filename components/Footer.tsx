@@ -18,10 +18,9 @@ export default function Footer() {
             <h3 className="font-bold text-lg mb-4 text-gray-900">Полезни връзки</h3>
             <div className="space-y-2 text-sm">
               <div>
-                <p className="font-semibold text-gray-900">Столична община</p>
-                <p className="text-gray-700">0700 17 310</p>
-                <a href="https://www.sofia.bg" className="text-[#5DADE2] hover:underline">
-                  www.sofia.bg
+                <p className="font-semibold text-gray-900">Район Оборище</p>
+                <a href="https://rayon-oborishte.bg/" target="_blank" rel="noopener noreferrer" className="text-[#5DADE2] hover:underline">
+                  rayon-oborishte.bg
                 </a>
               </div>
             </div>
