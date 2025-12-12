@@ -1,33 +1,58 @@
 import { GoogleGenAI } from '@google/genai';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
+// Read the prompt template once at module load time
+let promptTemplate: string;
+try {
+  promptTemplate = readFileSync(
+    join(process.cwd(), 'lib', 'prompts', 'data-extraction.md'),
+    'utf-8'
+  );
+} catch (error) {
+  console.error('Failed to load prompt template:', error);
+  throw new Error('Prompt template file not found');
+}
+
 export async function extractAddresses(text: string): Promise<string[]> {
   try {
-    // Sanitize input to prevent prompt injection
-    const sanitizedText = text.replace(/[\n\r]/g, ' ').trim();
-    if (!sanitizedText || sanitizedText.length > 5000) {
-      console.error('Invalid text length for address extraction');
+    // Validate message
+    if (!text || typeof text !== 'string') {
+      console.error('Invalid text parameter for address extraction');
       return [];
     }
 
-    const prompt = `Extract all addresses from the following text. Focus on addresses in Sofia, Bulgaria, especially in the Oborishte district. Return only the addresses as a JSON array of strings, with no additional text or explanation. If no addresses are found, return an empty array [].
+    // Validate message length
+    if (text.length > 5000) {
+      console.error('Text is too long for address extraction (max 5000 characters)');
+      return [];
+    }
 
-Text: ${sanitizedText}
+    // Sanitize input to prevent prompt injection
+    const sanitizedText = text.replace(/[\n\r]/g, ' ').trim();
 
-Return format: ["address1", "address2", ...]`;
+    // Construct the prompt by appending the sanitized message to the template
+    const prompt = promptTemplate + sanitizedText;
 
+    // Make request to Gemini API
     const response = await ai.models.generateContent({
       model: process.env.GOOGLE_AI_MODEL!,
       contents: prompt,
     });
     const responseText = response.text || '';
 
-    // Parse the JSON response
-    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    // Log the response from Gemini API after address extraction
+    console.log('Address extraction completed. AI Response:', responseText);
+
+    // Parse the JSON response to extract pins array
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const addresses = JSON.parse(jsonMatch[0]);
-      return addresses.filter((addr: string) => addr && addr.trim().length > 0);
+      const parsedResponse = JSON.parse(jsonMatch[0]);
+      // Extract pins array from the structured response
+      const pins = parsedResponse.pins || [];
+      return pins.filter((addr: string) => addr && addr.trim().length > 0);
     }
 
     return [];
