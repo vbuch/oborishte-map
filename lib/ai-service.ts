@@ -1,6 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export async function extractAddresses(text: string): Promise<string[]> {
   try {
@@ -11,17 +11,17 @@ export async function extractAddresses(text: string): Promise<string[]> {
       return [];
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
     const prompt = `Extract all addresses from the following text. Focus on addresses in Sofia, Bulgaria, especially in the Oborishte district. Return only the addresses as a JSON array of strings, with no additional text or explanation. If no addresses are found, return an empty array [].
 
 Text: ${sanitizedText}
 
 Return format: ["address1", "address2", ...]`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const responseText = response.text();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash-exp',
+      contents: prompt,
+    });
+    const responseText = response.text || '';
 
     // Parse the JSON response
     const jsonMatch = responseText.match(/\[[\s\S]*\]/);

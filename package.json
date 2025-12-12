@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^1.33.0",
     "@react-google-maps/api": "^2.20.7",
     "firebase": "^12.6.0",
     "next": "16.0.10",
