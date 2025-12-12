@@ -43,38 +43,44 @@ export default function MapComponent({ messages }: MapComponentProps) {
 
   return (
     <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
-      <GoogleMap mapContainerStyle={mapContainerStyle} options={mapOptions}>
-        {messages.map((message) =>
-          message.addresses?.map((address, index) => (
-            <Marker
-              key={`${message.id}-${index}`}
-              position={{
-                lat: address.coordinates.lat,
-                lng: address.coordinates.lng,
-              }}
-              onClick={() => handleMarkerClick(message, index)}
-            />
-          ))
-        )}
+      {!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
+        <div className="w-full h-[600px] flex items-center justify-center bg-gray-100 rounded-lg">
+          <p className="text-red-600">Google Maps API key is not configured</p>
+        </div>
+      ) : (
+        <GoogleMap mapContainerStyle={mapContainerStyle} options={mapOptions}>
+          {messages.map((message) =>
+            message.addresses?.map((address, index) => (
+              <Marker
+                key={`${message.id}-${index}`}
+                position={{
+                  lat: address.coordinates.lat,
+                  lng: address.coordinates.lng,
+                }}
+                onClick={() => handleMarkerClick(message, index)}
+              />
+            ))
+          )}
 
-        {selectedMessage && (
-          <InfoWindow
-            position={{
-              lat: selectedMessage.message.addresses![selectedMessage.addressIndex].coordinates.lat,
-              lng: selectedMessage.message.addresses![selectedMessage.addressIndex].coordinates.lng,
-            }}
-            onCloseClick={handleInfoWindowClose}
-          >
-            <div className="p-2 max-w-xs">
-              <p className="text-sm font-semibold mb-2">Original Message:</p>
-              <p className="text-sm mb-2">{selectedMessage.message.text}</p>
-              <p className="text-xs text-gray-600">
-                {selectedMessage.message.addresses![selectedMessage.addressIndex].formattedAddress}
-              </p>
-            </div>
-          </InfoWindow>
-        )}
-      </GoogleMap>
+          {selectedMessage && (
+            <InfoWindow
+              position={{
+                lat: selectedMessage.message.addresses![selectedMessage.addressIndex].coordinates.lat,
+                lng: selectedMessage.message.addresses![selectedMessage.addressIndex].coordinates.lng,
+              }}
+              onCloseClick={handleInfoWindowClose}
+            >
+              <div className="p-2 max-w-xs">
+                <p className="text-sm font-semibold mb-2">Original Message:</p>
+                <p className="text-sm mb-2">{selectedMessage.message.text}</p>
+                <p className="text-xs text-gray-600">
+                  {selectedMessage.message.addresses![selectedMessage.addressIndex].formattedAddress}
+                </p>
+              </div>
+            </InfoWindow>
+          )}
+        </GoogleMap>
+      )}
     </LoadScript>
   );
 }

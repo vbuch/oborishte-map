@@ -5,6 +5,13 @@ import { extractAddresses } from '@/lib/ai-service';
 import { geocodeAddresses } from '@/lib/geocoding-service';
 import { Message } from '@/lib/types';
 
+function convertTimestamp(timestamp: any): string {
+  if (timestamp?.toDate) {
+    return timestamp.toDate().toISOString();
+  }
+  return timestamp || new Date().toISOString();
+}
+
 export async function GET() {
   try {
     const messagesRef = collection(db, 'messages');
@@ -18,7 +25,7 @@ export async function GET() {
         id: doc.id,
         text: data.text,
         addresses: data.addresses || [],
-        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        createdAt: convertTimestamp(data.createdAt),
       });
     });
 
@@ -39,6 +46,14 @@ export async function POST(request: NextRequest) {
     if (!text || typeof text !== 'string') {
       return NextResponse.json(
         { error: 'Invalid message text' },
+        { status: 400 }
+      );
+    }
+
+    // Validate text length
+    if (text.length > 5000) {
+      return NextResponse.json(
+        { error: 'Message text is too long (max 5000 characters)' },
         { status: 400 }
       );
     }
@@ -73,3 +88,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
