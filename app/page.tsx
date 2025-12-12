@@ -42,7 +42,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Add padding-top to account for overlapping logo (64px overlap + 8px spacing) */}
+      {/* Add padding-top to account for overlapping logo: pt-20 (80px) = 64px logo overlap + 16px spacing */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
         <MessageForm onMessageSubmit={handleMessageSubmit} />
 
