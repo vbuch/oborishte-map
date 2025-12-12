@@ -18,7 +18,7 @@ Text: ${sanitizedText}
 Return format: ["address1", "address2", ...]`;
 
     const response = await ai.models.generateContent({
-      model: process.env.GOOGLE_AI_MODEL || 'gemini-2.0-flash-exp',
+      model: process.env.GOOGLE_AI_MODEL!,
       contents: prompt,
     });
     const responseText = response.text || '';
