@@ -41,16 +41,7 @@ export default function Home() {
   }, [fetchMessages]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-3xl font-bold text-gray-900">Oborishte Map</h1>
-          <p className="text-gray-600 mt-1">
-            Report issues in Oborishte District, Sofia
-          </p>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-white">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <MessageForm onMessageSubmit={handleMessageSubmit} />
 
