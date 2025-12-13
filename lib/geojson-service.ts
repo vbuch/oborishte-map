@@ -7,7 +7,7 @@ import {
   GeoJSONLineString,
   GeoJSONPolygon,
   IntersectionCoordinates,
-} from './types';
+} from "./types";
 
 // Cache for geocoding results and intersection lookups
 const geocodingCache = new Map<string, IntersectionCoordinates | null>();
@@ -20,18 +20,18 @@ export function normalizeAddress(address: string): string {
     .replace(/[„""]/g, '"')
     .replace(/['']/g, "'")
     // Replace № with space
-    .replace(/№/g, ' ')
+    .replace(/№/g, " ")
     // Replace & with and
-    .replace(/&/g, 'and')
+    .replace(/&/g, "and")
     // Normalize whitespace
-    .replace(/\s+/g, ' ')
+    .replace(/\s+/g, " ")
     .trim();
 
   // Append ", Sofia, Bulgaria" if missing
   const lowerNormalized = normalized.toLowerCase();
-  const hasSofia = lowerNormalized.includes('sofia');
-  const hasBulgaria = lowerNormalized.includes('bulgaria');
-  
+  const hasSofia = lowerNormalized.includes("sofia");
+  const hasBulgaria = lowerNormalized.includes("bulgaria");
+
   if (!hasSofia && !hasBulgaria) {
     normalized = `${normalized}, Sofia, Bulgaria`;
   } else if (hasSofia && !hasBulgaria) {
@@ -42,23 +42,26 @@ export function normalizeAddress(address: string): string {
 }
 
 // Step 2 — PIN / Address Geocoding (Points)
-async function geocodePin(pin: string, preGeocodedAddresses?: Map<string, IntersectionCoordinates>): Promise<GeoJSONFeature | null> {
+async function geocodePin(
+  pin: string,
+  preGeocodedAddresses?: Map<string, IntersectionCoordinates>
+): Promise<GeoJSONFeature | null> {
   const normalizedPin = normalizeAddress(pin);
 
   // Check if we have a pre-geocoded address first
   if (preGeocodedAddresses?.has(pin)) {
     const coords = preGeocodedAddresses.get(pin)!;
     return {
-      type: 'Feature',
+      type: "Feature",
       geometry: {
-        type: 'Point',
+        type: "Point",
         coordinates: [coords.lng, coords.lat],
       },
       properties: {
-        feature_type: 'pin',
+        feature_type: "pin",
         original_text: pin,
         normalized_text: normalizedPin,
-        is_intersection: normalizedPin.includes('and'),
+        is_intersection: normalizedPin.includes("and"),
       },
     };
   }
@@ -67,18 +70,18 @@ async function geocodePin(pin: string, preGeocodedAddresses?: Map<string, Inters
   if (geocodingCache.has(normalizedPin)) {
     const cached = geocodingCache.get(normalizedPin);
     if (!cached) return null;
-    
+
     return {
-      type: 'Feature',
+      type: "Feature",
       geometry: {
-        type: 'Point',
+        type: "Point",
         coordinates: [cached.lng, cached.lat],
       },
       properties: {
-        feature_type: 'pin',
+        feature_type: "pin",
         original_text: pin,
         normalized_text: normalizedPin,
-        is_intersection: normalizedPin.includes('and'),
+        is_intersection: normalizedPin.includes("and"),
       },
     };
   }
@@ -91,15 +94,16 @@ async function geocodePin(pin: string, preGeocodedAddresses?: Map<string, Inters
     const response = await fetch(url);
     const data = await response.json();
 
-    if (data.status === 'OK' && data.results && data.results.length > 0) {
+    if (data.status === "OK" && data.results && data.results.length > 0) {
       // Prefer results inside Sofia municipality
       let result = data.results[0];
       for (const res of data.results) {
         const addressComponents = res.address_components || [];
         const hasSofia = addressComponents.some(
           (comp: any) =>
-            (comp.types.includes('locality') || comp.types.includes('administrative_area_level_1')) &&
-            comp.long_name.toLowerCase().includes('sofia')
+            (comp.types.includes("locality") ||
+              comp.types.includes("administrative_area_level_1")) &&
+            comp.long_name.toLowerCase().includes("sofia")
         );
         if (hasSofia) {
           result = res;
@@ -116,17 +120,17 @@ async function geocodePin(pin: string, preGeocodedAddresses?: Map<string, Inters
       geocodingCache.set(normalizedPin, coordinates);
 
       return {
-        type: 'Feature',
+        type: "Feature",
         geometry: {
-          type: 'Point',
+          type: "Point",
           coordinates: [coordinates.lng, coordinates.lat],
         },
         properties: {
-          feature_type: 'pin',
+          feature_type: "pin",
           original_text: pin,
           normalized_text: normalizedPin,
           formatted_address: result.formatted_address,
-          is_intersection: normalizedPin.includes('and'),
+          is_intersection: normalizedPin.includes("and"),
         },
       };
     }
@@ -135,7 +139,7 @@ async function geocodePin(pin: string, preGeocodedAddresses?: Map<string, Inters
     geocodingCache.set(normalizedPin, null);
     return null;
   } catch (error) {
-    console.error('Error geocoding pin:', error);
+    console.error("Error geocoding pin:", error);
     return null;
   }
 }
@@ -161,15 +165,16 @@ async function resolveIntersection(
     const response = await fetch(url);
     const data = await response.json();
 
-    if (data.status === 'OK' && data.results && data.results.length > 0) {
+    if (data.status === "OK" && data.results && data.results.length > 0) {
       // Prefer results inside Sofia municipality
       let result = data.results[0];
       for (const res of data.results) {
         const addressComponents = res.address_components || [];
         const hasSofia = addressComponents.some(
           (comp: any) =>
-            (comp.types.includes('locality') || comp.types.includes('administrative_area_level_1')) &&
-            comp.long_name.toLowerCase().includes('sofia')
+            (comp.types.includes("locality") ||
+              comp.types.includes("administrative_area_level_1")) &&
+            comp.long_name.toLowerCase().includes("sofia")
         );
         if (hasSofia) {
           result = res;
@@ -196,7 +201,11 @@ async function resolveIntersection(
     const responseSimplified = await fetch(urlSimplified);
     const dataSimplified = await responseSimplified.json();
 
-    if (dataSimplified.status === 'OK' && dataSimplified.results && dataSimplified.results.length > 0) {
+    if (
+      dataSimplified.status === "OK" &&
+      dataSimplified.results &&
+      dataSimplified.results.length > 0
+    ) {
       const coordinates = {
         lat: dataSimplified.results[0].geometry.location.lat,
         lng: dataSimplified.results[0].geometry.location.lng,
@@ -210,7 +219,7 @@ async function resolveIntersection(
     intersectionCache.set(normalizedKey, null);
     return null;
   } catch (error) {
-    console.error('Error resolving intersection:', error);
+    console.error("Error resolving intersection:", error);
     return null;
   }
 }
@@ -229,23 +238,23 @@ async function getStreetCenterline(
     const response = await fetch(url);
     const data = await response.json();
 
-    if (data.status === 'OK' && data.routes && data.routes.length > 0) {
+    if (data.status === "OK" && data.routes && data.routes.length > 0) {
       const route = data.routes[0];
       const polyline = route.overview_polyline?.polyline;
 
       if (polyline) {
         const coordinates = decodePolyline(polyline);
         return {
-          type: 'LineString',
+          type: "LineString",
           coordinates,
         };
       }
     }
 
-    console.error('Failed to retrieve centerline:', data.status);
+    console.error("Failed to retrieve centerline:", data.status);
     return null;
   } catch (error) {
-    console.error('Error getting street centerline:', error);
+    console.error("Error getting street centerline:", error);
     return null;
   }
 }
@@ -334,8 +343,14 @@ function bufferLineString(
     }
 
     // Apply buffer with proper longitude/latitude scaling
-    leftSide.push([lon + perpLon * bufferDegreesLon, lat + perpLat * bufferDegreesLat]);
-    rightSide.push([lon - perpLon * bufferDegreesLon, lat - perpLat * bufferDegreesLat]);
+    leftSide.push([
+      lon + perpLon * bufferDegreesLon,
+      lat + perpLat * bufferDegreesLat,
+    ]);
+    rightSide.push([
+      lon - perpLon * bufferDegreesLon,
+      lat - perpLat * bufferDegreesLat,
+    ]);
   }
 
   // Create polygon by combining left side, reversed right side, and closing
@@ -346,7 +361,7 @@ function bufferLineString(
   ];
 
   return {
-    type: 'Polygon',
+    type: "Polygon",
     coordinates: [polygonRing],
   };
 }
@@ -355,12 +370,12 @@ function bufferLineString(
 function getBufferWidth(streetName: string): number {
   const lowerStreet = streetName.toLowerCase();
 
-  if (lowerStreet.includes('boulevard') || lowerStreet.includes('булевард')) {
+  if (lowerStreet.includes("boulevard") || lowerStreet.includes("булевард")) {
     return 13; // 12-14m average
   } else if (
-    lowerStreet.includes('avenue') ||
-    lowerStreet.includes('проспект') ||
-    lowerStreet.includes('collector')
+    lowerStreet.includes("avenue") ||
+    lowerStreet.includes("проспект") ||
+    lowerStreet.includes("collector")
   ) {
     return 9; // 8-10m average
   } else {
@@ -379,7 +394,7 @@ async function createClosureFeature(
     const endCoords = await resolveIntersection(street.street, street.to);
 
     if (!startCoords || !endCoords) {
-      console.error('Failed to resolve intersection endpoints for:', street);
+      console.error("Failed to resolve intersection endpoints for:", street);
       // Return null instead of invalid geometry
       return null;
     }
@@ -391,7 +406,7 @@ async function createClosureFeature(
     const centerline = await getStreetCenterline(startCoords, endCoords);
 
     if (!centerline) {
-      console.error('Failed to retrieve centerline for:', street);
+      console.error("Failed to retrieve centerline for:", street);
       // Return null instead of invalid geometry
       return null;
     }
@@ -401,25 +416,25 @@ async function createClosureFeature(
     const polygon = bufferLineString(centerline, bufferWidth);
 
     if (!polygon) {
-      console.error('Failed to buffer linestring for:', street);
+      console.error("Failed to buffer linestring for:", street);
       return null;
     }
 
     // Step 6: Assemble feature
     return {
-      type: 'Feature',
+      type: "Feature",
       geometry: polygon,
       properties: {
-        feature_type: 'street_closure',
+        feature_type: "street_closure",
         street: street.street,
         from: street.from,
         to: street.to,
-        start_time: timespan[0]?.start || '',
-        end_time: timespan[0]?.end || '',
+        start_time: timespan[0]?.start || "",
+        end_time: timespan[0]?.end || "",
       },
     };
   } catch (error) {
-    console.error('Error creating closure feature:', error);
+    console.error("Error creating closure feature:", error);
     return null;
   }
 }
@@ -432,7 +447,7 @@ export async function convertToGeoJSON(
   const features: GeoJSONFeature[] = [];
 
   // Process all pins
-  console.log('Processing pins:', extractedData.pins.length);
+  console.log("Processing pins:", extractedData.pins.length);
   for (const pin of extractedData.pins) {
     const feature = await geocodePin(pin, preGeocodedAddresses);
     if (feature) {
@@ -445,7 +460,7 @@ export async function convertToGeoJSON(
   }
 
   // Process all street closures
-  console.log('Processing street closures:', extractedData.streets.length);
+  console.log("Processing street closures:", extractedData.streets.length);
   for (const street of extractedData.streets) {
     const feature = await createClosureFeature(street, extractedData.timespan);
     if (feature) {
@@ -455,10 +470,10 @@ export async function convertToGeoJSON(
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
 
-  console.log('Total features created:', features.length);
+  console.log("Total features created:", features.length);
 
   return {
-    type: 'FeatureCollection',
+    type: "FeatureCollection",
     features,
   };
 }
