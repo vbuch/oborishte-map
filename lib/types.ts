@@ -3,6 +3,7 @@ export interface Message {
   text: string;
   addresses?: Address[];
   extractedData?: ExtractedData;
+  geoJson?: GeoJSONFeatureCollection;
   createdAt: Date | string;
 }
 
@@ -35,4 +36,39 @@ export interface ExtractedData {
   pins: string[];
   streets: StreetSection[];
   timespan: Timespan[];
+}
+
+// GeoJSON Types
+export type GeoJSONGeometry = GeoJSONPoint | GeoJSONLineString | GeoJSONPolygon;
+
+export interface GeoJSONPoint {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
+}
+
+export interface GeoJSONLineString {
+  type: 'LineString';
+  coordinates: [number, number][]; // array of [longitude, latitude]
+}
+
+export interface GeoJSONPolygon {
+  type: 'Polygon';
+  coordinates: [number, number][][]; // array of rings, each ring is array of [longitude, latitude]
+}
+
+export interface GeoJSONFeature {
+  type: 'Feature';
+  geometry: GeoJSONGeometry;
+  properties: Record<string, any>;
+}
+
+export interface GeoJSONFeatureCollection {
+  type: 'FeatureCollection';
+  features: GeoJSONFeature[];
+}
+
+// Intersection coordinates
+export interface IntersectionCoordinates {
+  lat: number;
+  lng: number;
 }

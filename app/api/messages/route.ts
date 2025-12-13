@@ -3,6 +3,7 @@ import { collection, addDoc, getDocs, query, orderBy, Timestamp } from 'firebase
 import { db } from '@/lib/firebase';
 import { extractAddresses } from '@/lib/ai-service';
 import { geocodeAddresses } from '@/lib/geocoding-service';
+import { convertToGeoJSON } from '@/lib/geojson-service';
 import { Message } from '@/lib/types';
 
 function convertTimestamp(timestamp: any): string {
@@ -26,6 +27,7 @@ export async function GET() {
         text: data.text,
         addresses: data.addresses || [],
         extractedData: data.extractedData || undefined,
+        geoJson: data.geoJson || undefined,
         createdAt: convertTimestamp(data.createdAt),
       });
     });
@@ -68,12 +70,24 @@ export async function POST(request: NextRequest) {
     // Geocode the extracted addresses
     const addresses = await geocodeAddresses(addressTexts);
 
+    // Convert to GeoJSON if we have extracted data
+    let geoJson = undefined;
+    if (extractedData) {
+      try {
+        geoJson = await convertToGeoJSON(extractedData);
+      } catch (error) {
+        console.error('Error converting to GeoJSON:', error);
+        // Continue without GeoJSON if conversion fails
+      }
+    }
+
     // Store the message in Firestore
     const messagesRef = collection(db, 'messages');
     const docRef = await addDoc(messagesRef, {
       text,
       addresses,
       extractedData,
+      geoJson,
       createdAt: Timestamp.now(),
     });
 
@@ -82,6 +96,7 @@ export async function POST(request: NextRequest) {
       text,
       addresses,
       extractedData: extractedData || undefined,
+      geoJson: geoJson || undefined,
       createdAt: new Date().toISOString(),
     };
 
