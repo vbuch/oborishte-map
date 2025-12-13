@@ -16,9 +16,9 @@ const intersectionCache = new Map<string, IntersectionCoordinates | null>();
 // Step 1 — Address Normalization
 export function normalizeAddress(address: string): string {
   let normalized = address
-    // Remove smart quotes
+    // Remove smart quotes (curly quotes)
     .replace(/[„""]/g, '"')
-    .replace(/[']/g, "'")
+    .replace(/['']/g, "'")
     // Replace № with space
     .replace(/№/g, ' ')
     // Replace & with and
