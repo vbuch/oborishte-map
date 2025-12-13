@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { adminDb, adminAuth } from "@/lib/firebase-admin";
 import { extractAddresses } from "@/lib/ai-service";
 import { geocodeAddresses } from "@/lib/geocoding-service";
 import { convertToGeoJSON } from "@/lib/geojson-service";
 import { Message } from "@/lib/types";
+import { FieldValue } from "firebase-admin/firestore";
 
 function convertTimestamp(timestamp: any): string {
+  // Handle Firestore Timestamp from Admin SDK
+  if (timestamp?._seconds) {
+    return new Date(timestamp._seconds * 1000).toISOString();
+  }
+  // Handle Firestore Timestamp from client SDK
   if (timestamp?.toDate) {
     return timestamp.toDate().toISOString();
   }
@@ -22,12 +20,12 @@ function convertTimestamp(timestamp: any): string {
 
 export async function GET() {
   try {
-    const messagesRef = collection(db, "messages");
-    const q = query(messagesRef, orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
+    // Use Admin SDK for reading messages
+    const messagesRef = adminDb.collection("messages");
+    const snapshot = await messagesRef.orderBy("createdAt", "desc").get();
 
     const messages: Message[] = [];
-    querySnapshot.forEach((doc) => {
+    snapshot.forEach((doc) => {
       const data = doc.data();
       messages.push({
         id: doc.id,
@@ -51,6 +49,31 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "Unauthorized - Missing auth token" },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.split("Bearer ")[1];
+    let decodedToken;
+
+    try {
+      decodedToken = await adminAuth.verifyIdToken(token);
+    } catch (error) {
+      console.error("Error verifying auth token:", error);
+      return NextResponse.json(
+        { error: "Unauthorized - Invalid auth token" },
+        { status: 401 }
+      );
+    }
+
+    const userId = decodedToken.uid;
+    const userEmail = decodedToken.email || null;
+
     const { text } = await request.json();
 
     if (!text || typeof text !== "string") {
@@ -98,14 +121,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Store the message in Firestore
-    const messagesRef = collection(db, "messages");
-    const docRef = await addDoc(messagesRef, {
+    // Store the message in Firestore using Admin SDK
+    const messagesRef = adminDb.collection("messages");
+    const docRef = await messagesRef.add({
       text,
       addresses,
-      extractedData,
-      geoJson,
-      createdAt: Timestamp.now(),
+      extractedData: extractedData || null,
+      geoJson: geoJson || null,
+      userId,
+      userEmail,
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     const newMessage: Message = {
