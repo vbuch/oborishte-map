@@ -28,9 +28,13 @@ export function normalizeAddress(address: string): string {
     .trim();
 
   // Append ", Sofia, Bulgaria" if missing
-  if (!normalized.toLowerCase().includes('sofia') && !normalized.toLowerCase().includes('bulgaria')) {
+  const lowerNormalized = normalized.toLowerCase();
+  const hasSofia = lowerNormalized.includes('sofia');
+  const hasBulgaria = lowerNormalized.includes('bulgaria');
+  
+  if (!hasSofia && !hasBulgaria) {
     normalized = `${normalized}, Sofia, Bulgaria`;
-  } else if (!normalized.toLowerCase().includes('bulgaria')) {
+  } else if (hasSofia && !hasBulgaria) {
     normalized = `${normalized}, Bulgaria`;
   }
 
@@ -274,7 +278,8 @@ function bufferLineString(
   // Convert buffer distance from meters to degrees (approximate)
   // 1 degree of latitude ≈ 111,000 meters
   // At Sofia's latitude (~42.7°), 1 degree of longitude ≈ 82,000 meters
-  const bufferDegrees = bufferMeters / 111000;
+  const bufferDegreesLat = bufferMeters / 111000;
+  const bufferDegreesLon = bufferMeters / 82000;
 
   const leftSide: [number, number][] = [];
   const rightSide: [number, number][] = [];
@@ -310,9 +315,9 @@ function bufferLineString(
       }
     }
 
-    // Apply buffer
-    leftSide.push([lon + perpLon * bufferDegrees, lat + perpLat * bufferDegrees]);
-    rightSide.push([lon - perpLon * bufferDegrees, lat - perpLat * bufferDegrees]);
+    // Apply buffer with proper longitude/latitude scaling
+    leftSide.push([lon + perpLon * bufferDegreesLon, lat + perpLat * bufferDegreesLat]);
+    rightSide.push([lon - perpLon * bufferDegreesLon, lat - perpLat * bufferDegreesLat]);
   }
 
   // Create polygon by combining left side, reversed right side, and closing
@@ -357,23 +362,8 @@ async function createClosureFeature(
 
     if (!startCoords || !endCoords) {
       console.error('Failed to resolve intersection endpoints for:', street);
-      return {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [[[0, 0]]],
-        },
-        properties: {
-          feature_type: 'street_closure',
-          street: street.street,
-          from: street.from,
-          to: street.to,
-          start_time: timespan[0]?.start || '',
-          end_time: timespan[0]?.end || '',
-          geometry_failed: true,
-          error: 'Failed to resolve intersections',
-        },
-      };
+      // Return null instead of invalid geometry
+      return null;
     }
 
     // Add small delay to respect API quotas
@@ -384,23 +374,8 @@ async function createClosureFeature(
 
     if (!centerline) {
       console.error('Failed to retrieve centerline for:', street);
-      return {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [[[0, 0]]],
-        },
-        properties: {
-          feature_type: 'street_closure',
-          street: street.street,
-          from: street.from,
-          to: street.to,
-          start_time: timespan[0]?.start || '',
-          end_time: timespan[0]?.end || '',
-          geometry_failed: true,
-          error: 'Failed to retrieve centerline',
-        },
-      };
+      // Return null instead of invalid geometry
+      return null;
     }
 
     // Step 5: Convert to polygon
