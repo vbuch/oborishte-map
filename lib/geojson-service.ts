@@ -18,7 +18,7 @@ export function normalizeAddress(address: string): string {
   let normalized = address
     // Remove smart quotes
     .replace(/[„""]/g, '"')
-    .replace(/'/g, "'")
+    .replace(/[']/g, "'")
     // Replace № with space
     .replace(/№/g, ' ')
     // Replace & with and
