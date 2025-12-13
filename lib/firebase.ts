@@ -38,8 +38,8 @@ function validateFirebaseConfig() {
   }
 
   // Additional validation for projectId format
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  if (projectId && !/^[a-z0-9-]+$/.test(projectId)) {
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!;
+  if (!/^[a-z0-9-]+$/.test(projectId)) {
     throw new Error(
       `Invalid NEXT_PUBLIC_FIREBASE_PROJECT_ID format: "${projectId}". ` +
       'Firebase project IDs must contain only lowercase letters, numbers, and hyphens.'
