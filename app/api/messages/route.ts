@@ -170,13 +170,51 @@ export async function POST(request: NextRequest) {
     let geoJson = undefined;
     if (extractedData) {
       try {
+        // Validate that all required addresses have been geocoded
+        const missingAddresses: string[] = [];
+
+        extractedData.pins.forEach((pin) => {
+          if (!preGeocodedMap.has(pin.address)) {
+            missingAddresses.push(pin.address);
+          }
+        });
+
+        extractedData.streets.forEach((street) => {
+          if (!preGeocodedMap.has(street.from)) {
+            missingAddresses.push(`${street.street} from: ${street.from}`);
+          }
+          if (!preGeocodedMap.has(street.to)) {
+            missingAddresses.push(`${street.street} to: ${street.to}`);
+          }
+        });
+
+        if (missingAddresses.length > 0) {
+          console.error(
+            `Missing geocoded coordinates for ${missingAddresses.length} addresses:`,
+            missingAddresses
+          );
+          return NextResponse.json(
+            {
+              error: "Failed to geocode some addresses",
+              missingAddresses,
+            },
+            { status: 500 }
+          );
+        }
+
         geoJson = await convertToGeoJSON(extractedData, preGeocodedMap);
         console.log(
           `Generated GeoJSON with ${geoJson.features.length} features`
         );
       } catch (error) {
         console.error("Error converting to GeoJSON:", error);
-        // Continue without GeoJSON if conversion fails
+        return NextResponse.json(
+          {
+            error: "Failed to generate GeoJSON",
+            details: error instanceof Error ? error.message : String(error),
+          },
+          { status: 500 }
+        );
       }
     }
 
