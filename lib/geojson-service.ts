@@ -145,6 +145,182 @@ async function geocodePin(
 }
 
 // Step 3 — Street Segment Endpoint Resolution
+
+// Helper to geocode using Directions API for intersections
+async function geocodeIntersectionViaDirections(
+  streets: [string, string],
+  apiKey: string
+): Promise<IntersectionCoordinates | null> {
+  console.log(`Streets: "${streets[0]}" & "${streets[1]}"`);
+
+  // Strategy: Use Directions API to find the route between the two streets
+  // The route will naturally go through their intersection point
+  const origin = encodeURIComponent(streets[0]);
+  const destination = encodeURIComponent(streets[1]);
+  const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=driving&key=${apiKey}`;
+
+  const directionsResponse = await fetch(directionsUrl);
+  const directionsData = await directionsResponse.json();
+
+  if (
+    directionsData.status === "OK" &&
+    directionsData.routes &&
+    directionsData.routes.length > 0
+  ) {
+    const route = directionsData.routes[0];
+    const leg = route.legs[0];
+
+    // Use the end location of the first step - this is typically after turning onto the destination street
+    if (leg.steps && leg.steps.length > 0) {
+      const intersectionPoint = leg.steps[0].end_location;
+      const coordinates = {
+        lat: intersectionPoint.lat,
+        lng: intersectionPoint.lng,
+      };
+
+      const mapsLink = `https://www.google.com/maps/place/${coordinates.lat},${coordinates.lng}/@${coordinates.lat},${coordinates.lng},210m`;
+      console.log(`Resolved intersection via Directions API:`, coordinates);
+      console.log(`View on map: ${mapsLink}`);
+
+      return coordinates;
+    }
+  }
+
+  return null;
+}
+
+// Helper to geocode using Geocoding API
+async function geocodeViaGeocodingAPI(
+  query: string,
+  apiKey: string
+): Promise<IntersectionCoordinates | null> {
+  const encodedAddress = encodeURIComponent(query);
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+
+  const response = await fetch(url);
+  const data = await response.json();
+
+  if (data.status === "OK" && data.results && data.results.length > 0) {
+    // Prefer results inside Sofia municipality
+    let result = data.results[0];
+    for (const res of data.results) {
+      const addressComponents = res.address_components || [];
+      const hasSofia = addressComponents.some(
+        (comp: any) =>
+          (comp.types.includes("locality") ||
+            comp.types.includes("administrative_area_level_1")) &&
+          comp.long_name.toLowerCase().includes("sofia")
+      );
+      if (hasSofia) {
+        result = res;
+        break;
+      }
+    }
+
+    const coordinates = {
+      lat: result.geometry.location.lat,
+      lng: result.geometry.location.lng,
+    };
+
+    const mapsLink = `https://www.google.com/maps/place/${coordinates.lat},${coordinates.lng}/@${coordinates.lat},${coordinates.lng},210m`;
+    console.log(
+      `Resolved via Geocoding API:`,
+      coordinates,
+      `(${result.formatted_address})`
+    );
+    console.log(`View on map: ${mapsLink}`);
+
+    return coordinates;
+  }
+
+  return null;
+}
+
+// Helper to geocode an intersection (contains " & ")
+async function geocodeIntersection(
+  address: string,
+  normalizedAddress: string,
+  apiKey: string
+): Promise<IntersectionCoordinates | null> {
+  console.log(`Geocoding intersection: "${address}"`);
+
+  // Split the intersection into two streets
+  const streets = normalizedAddress.split(" & ").map((s) => s.trim());
+  if (streets.length !== 2) {
+    console.error(
+      `Invalid intersection format: expected 2 streets, got ${streets.length}`
+    );
+    return null;
+  }
+
+  // Try Directions API first
+  const directionsResult = await geocodeIntersectionViaDirections(
+    [streets[0], streets[1]],
+    apiKey
+  );
+  if (directionsResult) {
+    return directionsResult;
+  }
+
+  console.log(
+    `Directions API failed for intersection, falling back to geocoding`
+  );
+
+  // Fallback: try geocoding the intersection directly
+  console.log(`Trying geocoding with: "${normalizedAddress}"`);
+  return await geocodeViaGeocodingAPI(normalizedAddress, apiKey);
+}
+
+// Helper function to geocode an address or intersection
+async function geocodeAddressOrIntersection(
+  address: string
+): Promise<IntersectionCoordinates | null> {
+  const normalizedAddress = normalizeAddress(address);
+
+  // Check cache first
+  if (geocodingCache.has(normalizedAddress)) {
+    const cached = geocodingCache.get(normalizedAddress);
+    console.log(`Using cached coordinates for "${address}":`, cached);
+    return cached || null;
+  }
+
+  try {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.error("Google Maps API key is not configured");
+      geocodingCache.set(normalizedAddress, null);
+      return null;
+    }
+
+    let coordinates: IntersectionCoordinates | null = null;
+
+    // Check if this is an intersection (contains &)
+    if (normalizedAddress.includes(" & ")) {
+      coordinates = await geocodeIntersection(
+        address,
+        normalizedAddress,
+        apiKey
+      );
+    } else {
+      // Regular address geocoding (not an intersection)
+      coordinates = await geocodeViaGeocodingAPI(normalizedAddress, apiKey);
+    }
+
+    if (!coordinates) {
+      console.error(`Failed to geocode "${address}"`);
+    }
+
+    // Cache the result (even if null)
+    geocodingCache.set(normalizedAddress, coordinates);
+    return coordinates;
+  } catch (error) {
+    console.error("Error geocoding address/intersection:", error);
+    geocodingCache.set(normalizedAddress, null);
+    return null;
+  }
+}
+
+// Legacy function kept for backwards compatibility
 async function resolveIntersection(
   street: string,
   crossStreet: string
@@ -230,6 +406,27 @@ async function getStreetCenterline(
   endCoords: IntersectionCoordinates
 ): Promise<GeoJSONLineString | null> {
   try {
+    // Check if start and end are the same or very close
+    const distance = Math.sqrt(
+      Math.pow(endCoords.lat - startCoords.lat, 2) +
+        Math.pow(endCoords.lng - startCoords.lng, 2)
+    );
+
+    // If points are within ~10 meters (roughly 0.0001 degrees), create a simple line
+    if (distance < 0.0001) {
+      console.log("Start and end points are very close, creating simple point");
+      // For a single point, we'll create a small line segment to allow buffering
+      // Extend slightly in a default direction (e.g., 10 meters north-south)
+      const offsetDegrees = 0.00009; // approximately 10 meters
+      return {
+        type: "LineString",
+        coordinates: [
+          [startCoords.lng, startCoords.lat - offsetDegrees / 2],
+          [startCoords.lng, startCoords.lat + offsetDegrees / 2],
+        ],
+      };
+    }
+
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const origin = `${startCoords.lat},${startCoords.lng}`;
     const destination = `${endCoords.lat},${endCoords.lng}`;
@@ -248,14 +445,58 @@ async function getStreetCenterline(
           type: "LineString",
           coordinates,
         };
+      } else {
+        console.error("No polyline found in route response");
+        // Fall back to simple straight line
+        return {
+          type: "LineString",
+          coordinates: [
+            [startCoords.lng, startCoords.lat],
+            [endCoords.lng, endCoords.lat],
+          ],
+        };
       }
     }
 
-    console.error("Failed to retrieve centerline:", data.status);
-    return null;
+    // Provide more detailed error information
+    if (data.status === "OK" && (!data.routes || data.routes.length === 0)) {
+      console.error(
+        "API returned OK but no routes found, using fallback straight line"
+      );
+      // Fall back to simple straight line
+      return {
+        type: "LineString",
+        coordinates: [
+          [startCoords.lng, startCoords.lat],
+          [endCoords.lng, endCoords.lat],
+        ],
+      };
+    } else {
+      console.error(
+        "Failed to retrieve centerline. API status:",
+        data.status,
+        "Error message:",
+        data.error_message || "None"
+      );
+      // Fall back to simple straight line
+      return {
+        type: "LineString",
+        coordinates: [
+          [startCoords.lng, startCoords.lat],
+          [endCoords.lng, endCoords.lat],
+        ],
+      };
+    }
   } catch (error) {
     console.error("Error getting street centerline:", error);
-    return null;
+    // Fall back to simple straight line
+    return {
+      type: "LineString",
+      coordinates: [
+        [startCoords.lng, startCoords.lat],
+        [endCoords.lng, endCoords.lat],
+      ],
+    };
   }
 }
 
@@ -390,11 +631,13 @@ async function createClosureFeature(
 ): Promise<GeoJSONFeature | null> {
   try {
     // Step 3: Resolve endpoints
-    const startCoords = await resolveIntersection(street.street, street.from);
-    const endCoords = await resolveIntersection(street.street, street.to);
+    // The from/to fields now contain either intersections (e.g., "Street A & Street B")
+    // or specific addresses (e.g., "Street A №12")
+    const startCoords = await geocodeAddressOrIntersection(street.from);
+    const endCoords = await geocodeAddressOrIntersection(street.to);
 
     if (!startCoords || !endCoords) {
-      console.error("Failed to resolve intersection endpoints for:", street);
+      console.error("Failed to resolve endpoints for:", street);
       // Return null instead of invalid geometry
       return null;
     }

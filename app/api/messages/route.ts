@@ -30,9 +30,11 @@ export async function GET() {
       messages.push({
         id: doc.id,
         text: data.text,
-        addresses: data.addresses || [],
-        extractedData: data.extractedData || undefined,
-        geoJson: data.geoJson || undefined,
+        addresses: data.addresses ? JSON.parse(data.addresses) : [],
+        extractedData: data.extractedData
+          ? JSON.parse(data.extractedData)
+          : undefined,
+        geoJson: data.geoJson ? JSON.parse(data.geoJson) : undefined,
         createdAt: convertTimestamp(data.createdAt),
       });
     });
@@ -122,12 +124,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Store the message in Firestore using Admin SDK
+    // Convert complex objects to strings to avoid Firestore nested entity issues
     const messagesRef = adminDb.collection("messages");
     const docRef = await messagesRef.add({
       text,
-      addresses,
-      extractedData: extractedData || null,
-      geoJson: geoJson || null,
+      addresses: addresses.length > 0 ? JSON.stringify(addresses) : null,
+      extractedData: extractedData ? JSON.stringify(extractedData) : null,
+      geoJson: geoJson ? JSON.stringify(geoJson) : null,
       userId,
       userEmail,
       createdAt: FieldValue.serverTimestamp(),
