@@ -11,6 +11,8 @@
   "dependencies": {
     "@google/genai": "^1.33.0",
     "@react-google-maps/api": "^2.20.7",
+    "@turf/turf": "^7.3.1",
+    "dotenv": "^17.2.3",
     "firebase": "^12.6.0",
     "firebase-admin": "^13.6.0",
     "next": "16.0.10",

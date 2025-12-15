@@ -104,8 +104,11 @@ export async function POST(request: NextRequest) {
     let addresses;
     let preGeocodedMap = new Map<string, { lat: number; lng: number }>();
 
-    if (GEOCODING_ALGO === "google_directions") {
-      // Directions-based approach: handle pins and streets separately
+    if (
+      GEOCODING_ALGO === "google_directions" ||
+      GEOCODING_ALGO === "overpass"
+    ) {
+      // Directions/Overpass-based approach: handle pins and streets separately
       addresses = [];
 
       // Geocode pins (simple addresses)

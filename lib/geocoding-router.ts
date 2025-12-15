@@ -15,6 +15,10 @@ import {
   mapboxGeocodeAddresses,
   mapboxGeocodeIntersections,
 } from "./mapbox-geocoding-service";
+import {
+  overpassGeocodeAddresses,
+  overpassGeocodeIntersections,
+} from "./overpass-geocoding-service";
 
 /**
  * Geocode a list of addresses using the configured algorithm
@@ -22,7 +26,10 @@ import {
 export async function geocodeAddresses(
   addresses: string[]
 ): Promise<Address[]> {
-  if (GEOCODING_ALGO === "mapbox_geocoding") {
+  if (GEOCODING_ALGO === "overpass") {
+    // Use OSM Overpass API + Turf.js for all geocoding
+    return overpassGeocodeAddresses(addresses);
+  } else if (GEOCODING_ALGO === "mapbox_geocoding") {
     // Use Mapbox for all geocoding
     return mapboxGeocodeAddresses(addresses);
   } else if (GEOCODING_ALGO === "google_directions") {
@@ -50,7 +57,11 @@ export async function geocodeAddresses(
 export async function geocodeStreets(
   streets: StreetSection[]
 ): Promise<Address[]> {
-  if (GEOCODING_ALGO === "mapbox_geocoding") {
+  if (GEOCODING_ALGO === "overpass") {
+    // For Overpass-based, geocode endpoints
+    const endpointAddresses = streets.flatMap((s) => [s.from, s.to]);
+    return overpassGeocodeAddresses(endpointAddresses);
+  } else if (GEOCODING_ALGO === "mapbox_geocoding") {
     // For Mapbox, geocode endpoints
     const endpointAddresses = streets.flatMap((s) => [s.from, s.to]);
     return mapboxGeocodeAddresses(endpointAddresses);
@@ -78,7 +89,50 @@ export async function geocodeIntersectionsForStreets(
 ): Promise<Map<string, { lat: number; lng: number }>> {
   const geocodedMap = new Map<string, { lat: number; lng: number }>();
 
-  if (GEOCODING_ALGO === "mapbox_geocoding") {
+  if (GEOCODING_ALGO === "overpass") {
+    // Extract unique intersections
+    const intersectionSet = new Set<string>();
+    const intersections: string[] = [];
+
+    streets.forEach((street) => {
+      const fromIntersection = `${street.street} ∩ ${street.from}`;
+      if (!intersectionSet.has(fromIntersection)) {
+        intersectionSet.add(fromIntersection);
+        intersections.push(fromIntersection);
+      }
+
+      const toIntersection = `${street.street} ∩ ${street.to}`;
+      if (!intersectionSet.has(toIntersection)) {
+        intersectionSet.add(toIntersection);
+        intersections.push(toIntersection);
+      }
+    });
+
+    console.log(
+      `Geocoding ${intersections.length} unique intersections using Overpass API + Turf.js`
+    );
+
+    const geocoded = await overpassGeocodeIntersections(intersections);
+
+    geocoded.forEach((address) => {
+      // Store with the full intersection key (for completeness)
+      geocodedMap.set(address.formattedAddress, address.coordinates);
+      console.log(
+        `   📍 Stored: "${address.formattedAddress}" → [${address.coordinates.lat}, ${address.coordinates.lng}]`
+      );
+
+      // ALSO store with just the cross street name (what GeoJSON service expects)
+      // Extract the cross street from "ул. A ∩ ул. B" format
+      const parts = address.formattedAddress.split(" ∩ ");
+      if (parts.length === 2) {
+        const crossStreet = parts[1].trim();
+        geocodedMap.set(crossStreet, address.coordinates);
+        console.log(
+          `   📍 Also stored: "${crossStreet}" → [${address.coordinates.lat}, ${address.coordinates.lng}]`
+        );
+      }
+    });
+  } else if (GEOCODING_ALGO === "mapbox_geocoding") {
     // Extract unique intersections
     const intersectionSet = new Set<string>();
     const intersectionPairs: [string, string, string][] = [];

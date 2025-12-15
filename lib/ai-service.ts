@@ -11,6 +11,7 @@ let systemInstruction: string;
 try {
   const promptPath = getDataExtractionPromptPath();
   const promptFile = promptPath.split("/").pop() || "data-extraction.md";
+  console.log("reading system instruction:", promptPath);
 
   systemInstruction = readFileSync(join(process.cwd(), promptPath), "utf-8");
 
@@ -47,7 +48,6 @@ export async function extractAddresses(
       console.error("GOOGLE_AI_MODEL environment variable is not set");
       return null;
     }
-    console.log("systemInstruction:", systemInstruction);
     console.log("sanitizedText:", sanitizedText);
     console.log("model:", model);
 

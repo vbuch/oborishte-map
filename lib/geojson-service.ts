@@ -8,6 +8,8 @@ import {
   GeoJSONPolygon,
   IntersectionCoordinates,
 } from "./types";
+import { getStreetSectionGeometry } from "./overpass-geocoding-service";
+import { GEOCODING_ALGO } from "./config";
 
 // Constants for API rate limiting
 const GEOCODING_DELAY_MS = 100;
@@ -419,7 +421,8 @@ async function resolveIntersection(
 // Step 4 — Street Centerline Retrieval
 async function getStreetCenterline(
   startCoords: IntersectionCoordinates,
-  endCoords: IntersectionCoordinates
+  endCoords: IntersectionCoordinates,
+  streetName?: string
 ): Promise<GeoJSONLineString | null> {
   try {
     // Check if start and end are the same or very close
@@ -443,6 +446,39 @@ async function getStreetCenterline(
       };
     }
 
+    // Use Overpass geometry if using Overpass algorithm
+    if (GEOCODING_ALGO === "overpass" && streetName) {
+      console.log(`   Getting OSM geometry for: ${streetName}`);
+      const osmGeometry = await getStreetSectionGeometry(
+        streetName,
+        startCoords,
+        endCoords
+      );
+
+      if (osmGeometry && osmGeometry.length >= 2) {
+        console.log(
+          `   ✅ Using OSM geometry with ${osmGeometry.length} points`
+        );
+        return {
+          type: "LineString",
+          coordinates: osmGeometry as [number, number][],
+        };
+      } else {
+        console.log(
+          `   ❌ Could not get OSM geometry, using fallback straight line`
+        );
+        // Fallback to straight line between the two points
+        return {
+          type: "LineString",
+          coordinates: [
+            [startCoords.lng, startCoords.lat],
+            [endCoords.lng, endCoords.lat],
+          ],
+        };
+      }
+    }
+
+    // For non-Overpass algorithms, use Google Directions
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const origin = `${startCoords.lat},${startCoords.lng}`;
     const destination = `${endCoords.lat},${endCoords.lng}`;
@@ -656,8 +692,11 @@ async function createClosureFeature(
 
     if (preGeocodedAddresses?.has(street.from)) {
       startCoords = preGeocodedAddresses.get(street.from)!;
-      console.log(`Using pre-geocoded start coords for "${street.from}"`);
+      console.log(
+        `Using pre-geocoded start coords for "${street.from}": [${startCoords.lat}, ${startCoords.lng}]`
+      );
     } else {
+      console.log(`❌ No pre-geocoded coords found for "${street.from}"`);
       startCoords = await geocodeAddressOrIntersection(street.from);
       // Add small delay to respect API quotas when geocoding
       await new Promise((resolve) => setTimeout(resolve, GEOCODING_DELAY_MS));
@@ -665,7 +704,9 @@ async function createClosureFeature(
 
     if (preGeocodedAddresses?.has(street.to)) {
       endCoords = preGeocodedAddresses.get(street.to)!;
-      console.log(`Using pre-geocoded end coords for "${street.to}"`);
+      console.log(
+        `Using pre-geocoded end coords for "${street.to}": [${endCoords.lat}, ${endCoords.lng}]`
+      );
     } else {
       endCoords = await geocodeAddressOrIntersection(street.to);
       // Add small delay to respect API quotas when geocoding
@@ -679,7 +720,11 @@ async function createClosureFeature(
     }
 
     // Step 4: Get centerline
-    const centerline = await getStreetCenterline(startCoords, endCoords);
+    const centerline = await getStreetCenterline(
+      startCoords,
+      endCoords,
+      street.street
+    );
 
     if (!centerline) {
       console.error("Failed to retrieve centerline for:", street);
