@@ -154,10 +154,6 @@ export default function MapComponent({
           {/* Render interest circles when not in target mode or when editing existing */}
           {interests.length > 0 && onInterestClick && (
             <InterestCircles
-              key={`interests-${interests
-                .map((i) => i.id || "unknown")
-                .sort((a, b) => a.localeCompare(b))
-                .join("-")}`}
               interests={interests}
               onInterestClick={onInterestClick}
               editingInterestId={targetMode?.editingInterestId}
