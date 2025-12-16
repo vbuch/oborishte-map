@@ -8,6 +8,9 @@ import GeoJSONLayer from "./GeoJSONLayer";
 interface MapComponentProps {
   readonly messages: Message[];
   readonly onFeatureClick?: (messageId: string) => void;
+  readonly onMapReady?: (
+    centerMap: (lat: number, lng: number, zoom?: number) => void
+  ) => void;
 }
 
 // Oborishte District center coordinates
@@ -75,12 +78,30 @@ const mapOptions = {
 export default function MapComponent({
   messages,
   onFeatureClick,
+  onMapReady,
 }: MapComponentProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
 
-  const onMapLoad = useCallback((map: google.maps.Map) => {
-    mapRef.current = map;
-  }, []);
+  const centerMap = useCallback(
+    (lat: number, lng: number, zoom: number = 17) => {
+      if (mapRef.current) {
+        mapRef.current.panTo({ lat, lng });
+        mapRef.current.setZoom(zoom);
+      }
+    },
+    []
+  );
+
+  const onMapLoad = useCallback(
+    (map: google.maps.Map) => {
+      mapRef.current = map;
+      // Notify parent that map is ready and pass the centerMap function
+      if (onMapReady) {
+        onMapReady(centerMap);
+      }
+    },
+    [onMapReady, centerMap]
+  );
 
   return (
     <div className="absolute inset-0">

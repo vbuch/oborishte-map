@@ -7,11 +7,13 @@ import { useDragToClose } from "@/lib/hooks/useDragToClose";
 interface MessageDetailViewProps {
   readonly message: Message | null;
   readonly onClose: () => void;
+  readonly onAddressClick?: (lat: number, lng: number) => void;
 }
 
 export default function MessageDetailView({
   message,
   onClose,
+  onAddressClick,
 }: Readonly<MessageDetailViewProps>) {
   const [isVisible, setIsVisible] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
@@ -240,9 +242,16 @@ export default function MessageDetailView({
               </h3>
               <div className="space-y-2">
                 {message.addresses.map((address, index) => (
-                  <div
+                  <button
                     key={`address-${address.formattedAddress}-${index}`}
-                    className="bg-gray-50 rounded-md p-3 border border-gray-200"
+                    onClick={() => {
+                      onAddressClick?.(
+                        address.coordinates.lat,
+                        address.coordinates.lng
+                      );
+                      onClose();
+                    }}
+                    className="w-full text-left bg-gray-50 rounded-md p-3 border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer"
                   >
                     <p className="text-sm text-gray-900">
                       {address.formattedAddress}
@@ -253,7 +262,7 @@ export default function MessageDetailView({
                         {address.coordinates.lng.toFixed(6)}
                       </p>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>

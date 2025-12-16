@@ -12,6 +12,9 @@ export default function HomeContent() {
   const [error, setError] = useState<string | null>(null);
   const [mapHeight, setMapHeight] = useState<number>(600);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [centerMapFn, setCenterMapFn] = useState<
+    ((lat: number, lng: number, zoom?: number) => void) | null
+  >(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,6 +74,24 @@ export default function HomeContent() {
     // Remove query parameter from URL
     router.push("/", { scroll: false });
   }, [router]);
+
+  // Handle map ready - receive centerMap function
+  const handleMapReady = useCallback(
+    (centerMap: (lat: number, lng: number, zoom?: number) => void) => {
+      setCenterMapFn(() => centerMap);
+    },
+    []
+  );
+
+  // Handle address click - center map on coordinates
+  const handleAddressClick = useCallback(
+    (lat: number, lng: number) => {
+      if (centerMapFn) {
+        centerMapFn(lat, lng, 18);
+      }
+    },
+    [centerMapFn]
+  );
 
   // Sync selected message with URL parameter
   useEffect(() => {
@@ -132,6 +153,7 @@ export default function HomeContent() {
           <MapComponent
             messages={messages}
             onFeatureClick={handleFeatureClick}
+            onMapReady={handleMapReady}
           />
         )}
       </div>
@@ -140,6 +162,7 @@ export default function HomeContent() {
       <MessageDetailView
         message={selectedMessage}
         onClose={handleCloseDetail}
+        onAddressClick={handleAddressClick}
       />
     </div>
   );
