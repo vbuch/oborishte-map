@@ -95,9 +95,20 @@ export async function geocodeAddressesFromExtractedData(
         extractedData.streets
       );
 
-      // Merge into preGeocodedMap
+      // Merge into preGeocodedMap and create Address objects for the addresses array
       streetGeocodedMap.forEach((coords, key) => {
         preGeocodedMap.set(key, coords);
+
+        // Add to addresses array for UI display
+        addresses.push({
+          originalText: key,
+          formattedAddress: key,
+          coordinates: coords,
+          geoJson: {
+            type: "Point",
+            coordinates: [coords.lng, coords.lat],
+          },
+        });
       });
 
       // Check for missing endpoints and try fallback geocoding
@@ -114,6 +125,7 @@ export async function geocodeAddressesFromExtractedData(
 
         fallbackGeocoded.forEach((addr) => {
           preGeocodedMap.set(addr.originalText, addr.coordinates);
+          addresses.push(addr);
           console.log(
             `   ✅ Fallback geocoded: "${addr.originalText}" → [${addr.coordinates.lat}, ${addr.coordinates.lng}]`
           );
