@@ -77,3 +77,16 @@ export interface IntersectionCoordinates {
   lat: number;
   lng: number;
 }
+
+// User Interest (area of interest on the map)
+export interface Interest {
+  id?: string;
+  userId: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  radius: number; // in meters (min: 100, max: 1000, default: 500)
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}

@@ -4,9 +4,16 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import MapComponent from "@/components/MapComponent";
 import MessageDetailView from "@/components/MessageDetailView";
-import { Message } from "@/lib/types";
+import { Message, Interest } from "@/lib/types";
+import { useInterests } from "@/lib/hooks/useInterests";
 
-export default function HomeContent() {
+interface HomeContentProps {
+  readonly onAddInterestRequest?: () => void;
+}
+
+export default function HomeContent({
+  onAddInterestRequest,
+}: HomeContentProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,6 +22,30 @@ export default function HomeContent() {
   const [centerMapFn, setCenterMapFn] = useState<
     ((lat: number, lng: number, zoom?: number) => void) | null
   >(null);
+
+  // Interest management state
+  const [targetMode, setTargetMode] = useState<{
+    active: boolean;
+    initialRadius?: number;
+    editingInterestId?: string | null;
+  }>({ active: false });
+  const [selectedInterest, setSelectedInterest] = useState<Interest | null>(
+    null
+  );
+  const [interestMenuPosition, setInterestMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const { interests, addInterest, updateInterest, deleteInterest } =
+    useInterests();
+
+  console.log(
+    "[HomeContent] interests from hook:",
+    interests.length,
+    interests.map((i) => i.id)
+  );
+
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -75,9 +106,12 @@ export default function HomeContent() {
     router.push("/", { scroll: false });
   }, [router]);
 
-  // Handle map ready - receive centerMap function
+  // Handle map ready - receive centerMap function and map instance
   const handleMapReady = useCallback(
-    (centerMap: (lat: number, lng: number, zoom?: number) => void) => {
+    (
+      centerMap: (lat: number, lng: number, zoom?: number) => void,
+      _map: google.maps.Map | null
+    ) => {
       setCenterMapFn(() => centerMap);
     },
     []
@@ -130,6 +164,123 @@ export default function HomeContent() {
     };
   }, [fetchMessages]);
 
+  // Interest management handlers
+  const handleInterestClick = useCallback((interest: Interest) => {
+    setSelectedInterest(interest);
+    // Show context menu at cursor position
+    // For simplicity, we'll use a fixed position relative to viewport
+    setInterestMenuPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    });
+  }, []);
+
+  const handleMoveInterest = useCallback(() => {
+    if (!selectedInterest || !centerMapFn) return;
+
+    // Center map on the interest
+    centerMapFn(
+      selectedInterest.coordinates.lat,
+      selectedInterest.coordinates.lng,
+      17
+    );
+
+    // Enter target mode with the interest being edited
+    setTargetMode({
+      active: true,
+      initialRadius: selectedInterest.radius,
+      editingInterestId: selectedInterest.id,
+    });
+
+    // Close menu
+    setInterestMenuPosition(null);
+    setSelectedInterest(null);
+  }, [selectedInterest, centerMapFn]);
+
+  const handleDeleteInterest = useCallback(async () => {
+    if (!selectedInterest?.id) return;
+
+    try {
+      await deleteInterest(selectedInterest.id);
+      setInterestMenuPosition(null);
+      setSelectedInterest(null);
+    } catch (error) {
+      console.error("Failed to delete interest:", error);
+
+      // Check if it's a 404 (already deleted, likely a duplicate)
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("404")) {
+        console.warn(
+          "Interest already deleted (likely a duplicate), removing from local state"
+        );
+        setInterestMenuPosition(null);
+        setSelectedInterest(null);
+        // Refresh to sync state
+        globalThis.location.reload();
+      } else {
+        alert("Failed to delete interest. Please try again.");
+      }
+    }
+  }, [selectedInterest, deleteInterest]);
+
+  const handleStartAddInterest = useCallback(() => {
+    setTargetMode({
+      active: true,
+      initialRadius: 500,
+      editingInterestId: null,
+    });
+
+    // Notify parent if callback provided
+    if (onAddInterestRequest) {
+      onAddInterestRequest();
+    }
+  }, [onAddInterestRequest]);
+
+  const handleSaveInterest = useCallback(
+    (coordinates: { lat: number; lng: number }, radius: number) => {
+      (async () => {
+        try {
+          if (targetMode.editingInterestId) {
+            // Update existing interest
+            await updateInterest(targetMode.editingInterestId, {
+              coordinates,
+              radius,
+            });
+          } else {
+            // Add new interest
+            await addInterest(coordinates, radius);
+          }
+
+          // Exit target mode
+          setTargetMode({ active: false });
+        } catch (error) {
+          console.error("Failed to save interest:", error);
+          alert("Failed to save interest. Please try again.");
+        }
+      })();
+    },
+    [targetMode.editingInterestId, addInterest, updateInterest]
+  );
+
+  const handleCancelTargetMode = useCallback(() => {
+    setTargetMode({ active: false });
+  }, []);
+
+  const handleCloseInterestMenu = useCallback(() => {
+    setInterestMenuPosition(null);
+    setSelectedInterest(null);
+  }, []);
+
+  // Expose handleStartAddInterest to parent via effect
+  useEffect(() => {
+    // Store in global for Header to access
+    (globalThis as any).__startAddInterest = handleStartAddInterest;
+    return () => {
+      delete (globalThis as any).__startAddInterest;
+    };
+  }, [handleStartAddInterest]);
+
   return (
     <div className="flex-1 flex flex-col" ref={containerRef}>
       {/* Error message if any */}
@@ -154,6 +305,19 @@ export default function HomeContent() {
             messages={messages}
             onFeatureClick={handleFeatureClick}
             onMapReady={handleMapReady}
+            interests={interests}
+            onInterestClick={handleInterestClick}
+            targetMode={
+              targetMode.active
+                ? {
+                    active: true,
+                    initialRadius: targetMode.initialRadius,
+                    editingInterestId: targetMode.editingInterestId,
+                    onSave: handleSaveInterest,
+                    onCancel: handleCancelTargetMode,
+                  }
+                : undefined
+            }
           />
         )}
       </div>
@@ -164,6 +328,63 @@ export default function HomeContent() {
         onClose={handleCloseDetail}
         onAddressClick={handleAddressClick}
       />
+
+      {/* Interest Context Menu */}
+      {interestMenuPosition && selectedInterest && (
+        <>
+          {/* Backdrop to close menu */}
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-transparent cursor-default"
+            onClick={handleCloseInterestMenu}
+            aria-label="Close menu"
+          />
+          {/* Menu */}
+          <div
+            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[150px]"
+            style={{
+              left: `${interestMenuPosition.x}px`,
+              top: `${interestMenuPosition.y}px`,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <button
+              onClick={handleMoveInterest}
+              className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+              </svg>
+              Move
+            </button>
+            <button
+              onClick={handleDeleteInterest}
+              className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50 flex items-center gap-2"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+              Delete
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
