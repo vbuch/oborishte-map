@@ -3,8 +3,9 @@ import { ExtractedData, GeoJSONFeatureCollection } from "@/lib/types";
 
 /**
  * Helper: Validate that all addresses have been geocoded
+ * Exported for unit testing
  */
-function validateAllAddressesGeocoded(
+export function validateAllAddressesGeocoded(
   extractedData: ExtractedData,
   preGeocodedMap: Map<string, { lat: number; lng: number }>
 ): string[] {

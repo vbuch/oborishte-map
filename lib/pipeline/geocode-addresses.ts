@@ -13,8 +13,9 @@ export interface GeocodingResult {
 
 /**
  * Helper: Find missing street endpoints that haven't been geocoded
+ * Exported for unit testing
  */
-function findMissingStreetEndpoints(
+export function findMissingStreetEndpoints(
   streets: StreetSection[],
   geocodedMap: Map<string, { lat: number; lng: number }>
 ): string[] {
@@ -34,8 +35,9 @@ function findMissingStreetEndpoints(
 
 /**
  * Helper: Collect all unique addresses from extracted data
+ * Exported for unit testing
  */
-function collectAllAddressesFromExtractedData(
+export function collectAllAddressesFromExtractedData(
   extractedData: ExtractedData
 ): Set<string> {
   const addressesToGeocode = new Set<string>();
