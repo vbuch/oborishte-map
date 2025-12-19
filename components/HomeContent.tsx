@@ -20,7 +20,13 @@ export default function HomeContent({
   const [mapHeight, setMapHeight] = useState<number>(600);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [centerMapFn, setCenterMapFn] = useState<
-    ((lat: number, lng: number, zoom?: number) => void) | null
+    | ((
+        lat: number,
+        lng: number,
+        zoom?: number,
+        options?: { animate?: boolean }
+      ) => void)
+    | null
   >(null);
 
   // Interest management state
@@ -109,7 +115,12 @@ export default function HomeContent({
   // Handle map ready - receive centerMap function and map instance
   const handleMapReady = useCallback(
     (
-      centerMap: (lat: number, lng: number, zoom?: number) => void,
+      centerMap: (
+        lat: number,
+        lng: number,
+        zoom?: number,
+        options?: { animate?: boolean }
+      ) => void,
       _map: google.maps.Map | null
     ) => {
       setCenterMapFn(() => centerMap);
@@ -182,7 +193,8 @@ export default function HomeContent({
     centerMapFn(
       selectedInterest.coordinates.lat,
       selectedInterest.coordinates.lng,
-      17
+      17,
+      { animate: false }
     );
 
     // Enter target mode with the interest being edited

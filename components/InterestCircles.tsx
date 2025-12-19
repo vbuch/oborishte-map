@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Circle } from "@react-google-maps/api";
 import { Interest } from "@/lib/types";
 
@@ -13,8 +13,17 @@ interface InterestCirclesProps {
 
 // Blue color from Oborishte logo
 const CIRCLE_COLOR = "#1976D2";
-const CIRCLE_FILL_OPACITY = 0.15;
-const CIRCLE_STROKE_OPACITY = 0.35;
+const CIRCLE_FILL_OPACITY = 0.08;
+const CIRCLE_STROKE_OPACITY = 0.1;
+const OPACITY_HOVER_DELTA = 0.05;
+const CIRCLE_FILL_OPACITY_HOVER = Math.max(
+  CIRCLE_FILL_OPACITY - OPACITY_HOVER_DELTA,
+  0
+);
+const CIRCLE_STROKE_OPACITY_HOVER = Math.max(
+  CIRCLE_STROKE_OPACITY - OPACITY_HOVER_DELTA,
+  0
+);
 
 // Shared circle options to avoid recreating on every render
 const CIRCLE_OPTIONS = {
@@ -33,6 +42,9 @@ export default function InterestCircles({
   editingInterestId,
   hideAll = false,
 }: InterestCirclesProps) {
+  const [hoveredInterestId, setHoveredInterestId] = useState<string | null>(
+    null
+  );
   console.log("[InterestCircles] RENDER:", {
     interestCount: interests.length,
     hideAll,
@@ -81,6 +93,8 @@ export default function InterestCircles({
       // Use a composite key to force remount if coordinates or radius change
       const compositeKey = `${interest.id}-${interest.coordinates.lat}-${interest.coordinates.lng}-${interest.radius}`;
 
+      const isHovered = hoveredInterestId === interest.id;
+
       return (
         <Circle
           key={compositeKey}
@@ -89,8 +103,22 @@ export default function InterestCircles({
             lng: interest.coordinates.lng,
           }}
           radius={interest.radius}
-          options={CIRCLE_OPTIONS}
+          options={{
+            ...CIRCLE_OPTIONS,
+            fillOpacity: isHovered
+              ? CIRCLE_FILL_OPACITY_HOVER
+              : CIRCLE_FILL_OPACITY,
+            strokeOpacity: isHovered
+              ? CIRCLE_STROKE_OPACITY_HOVER
+              : CIRCLE_STROKE_OPACITY,
+          }}
           onClick={() => onInterestClick(interest)}
+          onMouseOver={() => setHoveredInterestId(interest.id ?? null)}
+          onMouseOut={() => {
+            if (hoveredInterestId === interest.id) {
+              setHoveredInterestId(null);
+            }
+          }}
           onLoad={(circle) => {
             console.log(
               "[InterestCircles] Circle LOADED on map:",
@@ -108,7 +136,7 @@ export default function InterestCircles({
         />
       );
     });
-  }, [circlesToRender, onInterestClick]);
+  }, [circlesToRender, onInterestClick, hoveredInterestId]);
 
   // Don't render any circles if hideAll is true
   if (hideAll) {

@@ -18,11 +18,13 @@ const GEOJSON_STYLES = {
     strokeColor: LOGO_RED,
     strokeOpacity: 0.8,
     strokeWeight: 3,
+    zIndex: 5,
   },
   lineStringHover: {
     strokeColor: LOGO_RED,
     strokeOpacity: 1,
     strokeWeight: 4,
+    zIndex: 6,
   },
   polygon: {
     strokeColor: LOGO_RED,
@@ -30,6 +32,7 @@ const GEOJSON_STYLES = {
     strokeWeight: 2,
     fillColor: LOGO_RED,
     fillOpacity: 0.2,
+    zIndex: 5,
   },
   polygonHover: {
     strokeColor: LOGO_RED,
@@ -37,6 +40,7 @@ const GEOJSON_STYLES = {
     strokeWeight: 3,
     fillColor: LOGO_RED,
     fillOpacity: 0.35,
+    zIndex: 6,
   },
 };
 
@@ -92,6 +96,7 @@ export default function GeoJSONLayer({
               scale: hoveredFeature === key ? 1.2 : 1,
             }}
             title={feature.properties?.address || "Pin"}
+            zIndex={10}
             onClick={() => {
               console.log("GeoJSON point clicked:", feature.properties);
               if (message.id && onFeatureClick) {

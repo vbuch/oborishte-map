@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { GoogleMap } from "@react-google-maps/api";
 import { Message, Interest } from "@/lib/types";
 import GeoJSONLayer from "./GeoJSONLayer";
@@ -11,7 +11,12 @@ interface MapComponentProps {
   readonly messages: Message[];
   readonly onFeatureClick?: (messageId: string) => void;
   readonly onMapReady?: (
-    centerMap: (lat: number, lng: number, zoom?: number) => void,
+    centerMap: (
+      lat: number,
+      lng: number,
+      zoom?: number,
+      options?: { animate?: boolean }
+    ) => void,
     mapInstance: google.maps.Map | null
   ) => void;
   readonly interests?: Interest[];
@@ -96,6 +101,7 @@ export default function MapComponent({
   targetMode,
 }: MapComponentProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
+  const latestCenterRef = useRef(OBORISHTE_CENTER);
 
   console.log("[MapComponent] RENDER:", {
     interestCount: interests.length,
@@ -106,11 +112,26 @@ export default function MapComponent({
   });
 
   const centerMap = useCallback(
-    (lat: number, lng: number, zoom: number = 17) => {
-      if (mapRef.current) {
-        mapRef.current.panTo({ lat, lng });
-        mapRef.current.setZoom(zoom);
+    (
+      lat: number,
+      lng: number,
+      zoom: number = 17,
+      options?: { animate?: boolean }
+    ) => {
+      if (!mapRef.current) {
+        return;
       }
+
+      const nextCenter = { lat, lng };
+      latestCenterRef.current = nextCenter;
+
+      if (options?.animate === false) {
+        mapRef.current.setCenter(nextCenter);
+      } else {
+        mapRef.current.panTo(nextCenter);
+      }
+
+      mapRef.current.setZoom(zoom);
     },
     []
   );
@@ -128,26 +149,51 @@ export default function MapComponent({
   );
 
   // Get dynamic map options based on target mode
-  const getDynamicMapOptions = useCallback(() => {
+  const dynamicMapOptions = useMemo(() => {
+    const currentMapCenter = mapRef.current?.getCenter();
+    const preservedCenter = currentMapCenter
+      ? {
+          lat: currentMapCenter.lat(),
+          lng: currentMapCenter.lng(),
+        }
+      : latestCenterRef.current;
+
+    const baseOptions = {
+      ...mapOptions,
+      center: preservedCenter,
+    } as const;
+
     if (targetMode?.active) {
       return {
-        ...mapOptions,
+        ...baseOptions,
         zoomControl: false,
         scrollwheel: false,
         disableDoubleClickZoom: true,
-        gestureHandling: "greedy",
+        gestureHandling: "greedy" as google.maps.MapOptions["gestureHandling"],
       };
     }
-    return mapOptions;
+
+    return baseOptions;
   }, [targetMode?.active]);
+
+  const handleCenterChanged = useCallback(() => {
+    if (!mapRef.current) return;
+    const center = mapRef.current.getCenter();
+    if (!center) return;
+    latestCenterRef.current = {
+      lat: center.lat(),
+      lng: center.lng(),
+    };
+  }, []);
 
   return (
     <div className="absolute inset-0">
       {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
-          options={getDynamicMapOptions()}
+          options={dynamicMapOptions}
           onLoad={onMapLoad}
+          onCenterChanged={handleCenterChanged}
         >
           <GeoJSONLayer messages={messages} onFeatureClick={onFeatureClick} />
 
@@ -157,7 +203,7 @@ export default function MapComponent({
               interests={interests}
               onInterestClick={onInterestClick}
               editingInterestId={targetMode?.editingInterestId}
-              hideAll={targetMode?.active && !targetMode?.editingInterestId}
+              hideAll={false}
             />
           )}
 
