@@ -29,9 +29,20 @@ npm run crawl:sofiyska-voda -- --dry-run  # preview mode
 flowchart LR
     A[External Sources] --> B[Crawlers]
     B --> C[Firestore Sources Documents]
-    C --> D[messageIngest]
-    D --> E[Firestore Messages Documents]
-    E --> F[GeoJSON on Map]
+    C --> D[Ingest Script]
+    D --> E[messageIngest]
+    E --> F[Firestore Messages Documents]
+    F --> G[GeoJSON on Map]
 ```
 
-After crawlers store raw documents, the [messageIngest](../messageIngest) pipeline processes them to extract addresses, geocode locations, and generate map-ready GeoJSON features.
+After crawlers store raw documents in the `sources` collection, use the [ingest script](../INGESTION.md) to process them:
+
+```bash
+# Process all sources within Oborishte boundaries
+npm run ingest -- --boundaries=lib/messageIngest/boundaries/oborishte.geojson
+
+# Process sources from a specific crawler
+npm run ingest -- --source-type=sofiyska-voda --boundaries=lib/messageIngest/boundaries/oborishte.geojson
+```
+
+The ingest script runs each source through the [messageIngest](../messageIngest) pipeline to extract addresses, geocode locations, and generate map-ready GeoJSON features.

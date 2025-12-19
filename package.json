@@ -10,7 +10,8 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "crawl:rayon-oborishte": "tsx lib/crawlers/rayon-oborishte-bg/index.ts",
-    "crawl:sofiyska-voda": "tsx lib/crawlers/sofiyska-voda/index.ts"
+    "crawl:sofiyska-voda": "tsx lib/crawlers/sofiyska-voda/index.ts",
+    "ingest": "tsx lib/messageIngest/from-sources.ts"
   },
   "dependencies": {
     "@google/genai": "^1.33.0",
