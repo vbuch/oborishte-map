@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ExtractedData } from "./types";
-import { GEOCODING_ALGO, getDataExtractionPromptPath } from "./config";
+import { getDataExtractionPromptPath } from "./config";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY || "" });
 
@@ -10,12 +10,8 @@ const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY || "" });
 let systemInstruction: string;
 try {
   const promptPath = getDataExtractionPromptPath();
-  const promptFile = promptPath.split("/").pop() || "data-extraction.md";
-  console.log("reading system instruction:", promptPath);
 
   systemInstruction = readFileSync(join(process.cwd(), promptPath), "utf-8");
-
-  console.log(`Loaded prompt template: ${promptFile} (for ${GEOCODING_ALGO})`);
 } catch (error) {
   console.error("Failed to load prompt template:", error);
   throw new Error("Prompt template file not found");
@@ -48,8 +44,6 @@ export async function extractAddresses(
       console.error("GOOGLE_AI_MODEL environment variable is not set");
       return null;
     }
-    console.log("sanitizedText:", sanitizedText);
-    console.log("model:", model);
 
     // Make request to Gemini API
     const response = await ai.models.generateContent({
@@ -60,9 +54,6 @@ export async function extractAddresses(
       },
     });
     const responseText = response.text || "";
-
-    // Log the response from Gemini API after address extraction
-    console.log("Address extraction completed. AI Response:", responseText);
 
     // Parse the JSON response to extract the full structured data
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);

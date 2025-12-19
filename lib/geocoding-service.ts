@@ -58,14 +58,6 @@ export async function geocodeAddresses(
 
     if (geocoded) {
       geocodedAddresses.push(geocoded);
-      console.log(
-        "Address:",
-        address,
-        "geocoded to",
-        geocoded.formattedAddress,
-        "Google Maps URL:",
-        `https://www.google.com/maps/place/${geocoded.coordinates.lat},${geocoded.coordinates.lng}/@${geocoded.coordinates.lat},${geocoded.coordinates.lng},210m`
-      );
     } else {
       console.warn(`Failed to geocode address: ${address}`);
     }

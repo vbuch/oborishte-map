@@ -45,12 +45,6 @@ export default function InterestCircles({
   const [hoveredInterestId, setHoveredInterestId] = useState<string | null>(
     null
   );
-  console.log("[InterestCircles] RENDER:", {
-    interestCount: interests.length,
-    hideAll,
-    editingInterestId,
-    ids: interests.map((i) => i.id),
-  });
 
   // Memoize the filtered circles to avoid recalculating on every render
   const circlesToRender = useMemo(() => {
@@ -62,33 +56,13 @@ export default function InterestCircles({
       );
   }, [interests, editingInterestId]);
 
-  console.log(
-    "[InterestCircles] Will render",
-    circlesToRender.length,
-    "circles"
-  );
-  circlesToRender.forEach((interest, idx) => {
-    console.log(
-      `[InterestCircles] Circle ${idx}:`,
-      interest.id,
-      interest.coordinates
-    );
-  });
-
   // Memoize the rendered circles
   const renderedCircles = useMemo(() => {
-    console.log(
-      "[InterestCircles] useMemo: Creating",
-      circlesToRender.length,
-      "circle elements"
-    );
     return circlesToRender.map((interest) => {
       if (!interest.id) {
         console.warn("[InterestCircles] Interest without ID:", interest);
         return null;
       }
-
-      console.log("[InterestCircles] Creating circle element:", interest.id);
 
       // Use a composite key to force remount if coordinates or radius change
       const compositeKey = `${interest.id}-${interest.coordinates.lat}-${interest.coordinates.lng}-${interest.radius}`;
@@ -119,20 +93,6 @@ export default function InterestCircles({
               setHoveredInterestId(null);
             }
           }}
-          onLoad={(circle) => {
-            console.log(
-              "[InterestCircles] Circle LOADED on map:",
-              interest.id,
-              circle
-            );
-          }}
-          onUnmount={(circle) => {
-            console.log(
-              "[InterestCircles] Circle UNMOUNTED from map:",
-              interest.id,
-              circle
-            );
-          }}
         />
       );
     });
@@ -140,7 +100,6 @@ export default function InterestCircles({
 
   // Don't render any circles if hideAll is true
   if (hideAll) {
-    console.log("[InterestCircles] Hiding all circles (hideAll=true)");
     return null;
   }
 

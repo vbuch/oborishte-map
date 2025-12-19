@@ -99,8 +99,6 @@ export async function subscribeToPushNotifications(
       return null;
     }
 
-    console.log("FCM token obtained:", token.substring(0, 20) + "...");
-
     // Save subscription to backend
     const response = await fetch("/api/notifications/subscription", {
       method: "POST",
@@ -122,7 +120,6 @@ export async function subscribeToPushNotifications(
     }
 
     const subscription = await response.json();
-    console.log("Subscription saved successfully");
     return subscription;
   } catch (error) {
     console.error("Error subscribing to push notifications:", error);
@@ -142,7 +139,6 @@ export function setupForegroundMessageListener(
   }
 
   return onMessage(messaging, (payload) => {
-    console.log("Foreground message received:", payload);
     onMessageReceived(payload);
 
     // Show browser notification if permission granted
@@ -176,7 +172,6 @@ export async function ensureNotificationPermission(
 
   // If permission denied, don't ask again
   if (currentPermission === "denied") {
-    console.log("Notification permission denied by user");
     return;
   }
 
@@ -184,9 +179,6 @@ export async function ensureNotificationPermission(
   if (currentPermission === "granted") {
     const hasSubscription = await hasValidSubscription(userId);
     if (!hasSubscription) {
-      console.log(
-        "Subscription expired or invalid, creating new subscription..."
-      );
       await subscribeToPushNotifications(userId, idToken);
     }
     return;
@@ -199,23 +191,18 @@ export async function ensureNotificationPermission(
       async () => {
         const granted = await requestNotificationPermission();
         if (granted) {
-          console.log(
-            "Permission granted, subscribing to push notifications..."
-          );
           await subscribeToPushNotifications(userId, idToken);
         }
       },
       () => {
-        console.log("User declined notification prompt");
+        // User declined
       }
     );
   } else {
     // Fallback: request permission directly
-    console.log("Requesting notification permission...");
     const granted = await requestNotificationPermission();
 
     if (granted) {
-      console.log("Permission granted, subscribing to push notifications...");
       await subscribeToPushNotifications(userId, idToken);
     }
   }

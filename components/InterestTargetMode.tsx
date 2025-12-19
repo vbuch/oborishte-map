@@ -35,12 +35,6 @@ export default function InterestTargetMode({
   const [radius, setRadius] = useState(initialRadius);
   const [isSaving, setIsSaving] = useState(false);
 
-  console.log("[InterestTargetMode] RENDER:", {
-    hasMap: !!map,
-    radius,
-    currentCenter,
-  });
-
   // Update center when map moves
   useEffect(() => {
     if (!map) return;

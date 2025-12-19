@@ -143,18 +143,11 @@ export async function geocodeIntersectionsForStreets(
       }
     });
 
-    console.log(
-      `Geocoding ${intersections.length} unique intersections using Overpass API + Turf.js`
-    );
-
     const geocoded = await overpassGeocodeIntersections(intersections);
 
     geocoded.forEach((address) => {
       // Store with the full intersection key (for completeness)
       geocodedMap.set(address.formattedAddress, address.coordinates);
-      console.log(
-        `   📍 Stored: "${address.formattedAddress}" → [${address.coordinates.lat}, ${address.coordinates.lng}]`
-      );
 
       // ALSO store with just the cross street name (what GeoJSON service expects)
       // Extract the cross street from "ул. A ∩ ул. B" format
@@ -162,9 +155,6 @@ export async function geocodeIntersectionsForStreets(
       if (parts.length === 2) {
         const crossStreet = parts[1].trim();
         geocodedMap.set(crossStreet, address.coordinates);
-        console.log(
-          `   📍 Also stored: "${crossStreet}" → [${address.coordinates.lat}, ${address.coordinates.lng}]`
-        );
       }
     });
   } else if (STREET_GEOCODING_ALGO === "mapbox_geocoding") {
@@ -185,10 +175,6 @@ export async function geocodeIntersectionsForStreets(
         intersectionPairs.push([street.street, street.to, street.to]);
       }
     });
-
-    console.log(
-      `Geocoding ${intersectionPairs.length} unique intersections using Mapbox`
-    );
 
     const pairsForGeocoding: [string, string][] = intersectionPairs.map(
       ([street, cross]) => [street, cross]
@@ -218,10 +204,6 @@ export async function geocodeIntersectionsForStreets(
         intersectionPairs.push([street.street, street.to, street.to]);
       }
     });
-
-    console.log(
-      `Geocoding ${intersectionPairs.length} unique intersections using Directions API`
-    );
 
     // Geocode each intersection
     const pairsForGeocoding: [string, string][] = intersectionPairs.map(

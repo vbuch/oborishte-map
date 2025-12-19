@@ -18,6 +18,5 @@ export async function storeIncomingMessage(
     source,
     createdAt: FieldValue.serverTimestamp(),
   });
-  console.log(`Stored incoming message with ID: ${docRef.id}`);
   return docRef.id;
 }

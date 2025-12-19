@@ -37,8 +37,6 @@ export function useInterests() {
         return;
       }
 
-      console.log("[useInterests] Fetching interests for user:", user.uid);
-
       const response = await fetch("/api/interests", {
         headers: {
           Authorization: authHeader,
@@ -57,16 +55,6 @@ export function useInterests() {
 
       const data = await response.json();
       const fetchedInterests = data.interests || [];
-
-      console.log(
-        "[useInterests] Received",
-        fetchedInterests.length,
-        "interests"
-      );
-      console.log(
-        "[useInterests] Interest IDs:",
-        fetchedInterests.map((i: Interest) => i.id)
-      );
 
       // Check for duplicates from API
       const ids = fetchedInterests.map((i: Interest) => i.id);
@@ -114,13 +102,6 @@ export function useInterests() {
           throw new Error("Failed to get auth token");
         }
 
-        console.log(
-          "[addInterest] Creating interest at:",
-          coordinates,
-          "radius:",
-          radius
-        );
-
         const response = await fetch("/api/interests", {
           method: "POST",
           headers: {
@@ -141,18 +122,11 @@ export function useInterests() {
         }
 
         const data = await response.json();
-        console.log(
-          "[addInterest] Interest created with id:",
-          data.interest.id
-        );
 
         // Check if this interest already exists in the array (prevent duplicates)
         setInterests((prev) => {
           const exists = prev.some((i) => i.id === data.interest.id);
           if (exists) {
-            console.warn(
-              "[addInterest] Interest already in state, skipping duplicate"
-            );
             return prev;
           }
           return [data.interest, ...prev];
@@ -227,8 +201,6 @@ export function useInterests() {
           throw new Error("Failed to get auth token");
         }
 
-        console.log("[deleteInterest] Deleting interest with id:", id);
-
         const response = await fetch(`/api/interests?id=${id}`, {
           method: "DELETE",
           headers: {
@@ -246,9 +218,6 @@ export function useInterests() {
           );
         }
 
-        console.log(
-          "[deleteInterest] Successfully deleted, removing from local state"
-        );
         setInterests((prev) => prev.filter((interest) => interest.id !== id));
       } catch (err) {
         console.error("Error deleting interest:", err);
@@ -260,7 +229,6 @@ export function useInterests() {
 
   // Fetch interests when user logs in
   useEffect(() => {
-    console.log("[useInterests] useEffect triggered, calling fetchInterests");
     fetchInterests();
   }, [fetchInterests]);
 

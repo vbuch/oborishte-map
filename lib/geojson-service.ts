@@ -56,7 +56,6 @@ async function getStreetCenterline(
 
   // If points are within ~10 meters (roughly 0.0001 degrees), create a simple line
   if (distance < 0.0001) {
-    console.log("Start and end points are very close, creating simple point");
     // For a single point, we'll create a small line segment to allow buffering
     // Extend slightly in a default direction (e.g., 10 meters north-south)
     const offsetDegrees = 0.00009; // approximately 10 meters
@@ -70,11 +69,9 @@ async function getStreetCenterline(
   }
 
   // Use the configured geocoding algorithm via the router
-  console.log(`   Getting street geometry for: ${streetName}`);
   const geometry = await getStreetGeometry(streetName, startCoords, endCoords);
 
   if (geometry && geometry.length >= 2) {
-    console.log(`   ✅ Retrieved geometry with ${geometry.length} points`);
     return {
       type: "LineString",
       coordinates: geometry,
@@ -82,7 +79,6 @@ async function getStreetCenterline(
   }
 
   // Fallback to straight line between the two points
-  console.log(`   ⚠️  Using fallback straight line`);
   return {
     type: "LineString",
     coordinates: [
@@ -202,10 +198,6 @@ async function createClosureFeature(
     );
   }
 
-  console.log(
-    `Creating street closure: ${street.street} from "${street.from}" to "${street.to}"`
-  );
-
   // Get centerline
   const centerline = await getStreetCenterline(
     startCoords,
@@ -245,7 +237,6 @@ export async function convertToGeoJSON(
   const fallbackPins: typeof extractedData.pins = [];
 
   // Process all street closures first
-  console.log(`Processing ${extractedData.streets.length} street closures...`);
   for (const street of extractedData.streets) {
     try {
       const feature = await createClosureFeature(street, preGeocodedAddresses);
@@ -289,9 +280,6 @@ export async function convertToGeoJSON(
 
   // Process all pins (including fallback pins from failed streets)
   const allPins = [...extractedData.pins, ...fallbackPins];
-  console.log(
-    `Processing ${allPins.length} pins (${extractedData.pins.length} original + ${fallbackPins.length} from failed streets)...`
-  );
   for (const pin of allPins) {
     try {
       const feature = createPinFeature(pin, preGeocodedAddresses);
@@ -304,8 +292,6 @@ export async function convertToGeoJSON(
       );
     }
   }
-
-  console.log(`✅ Created ${features.length} total features`);
 
   return {
     type: "FeatureCollection",

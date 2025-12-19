@@ -9,7 +9,6 @@ export async function storeGeoJsonInMessage(
   geoJson: GeoJSONFeatureCollection | null
 ): Promise<void> {
   if (!geoJson) {
-    console.log("No GeoJSON to store");
     return;
   }
 
@@ -17,6 +16,4 @@ export async function storeGeoJsonInMessage(
   await messagesRef.doc(messageId).update({
     geoJson: JSON.stringify(geoJson),
   });
-
-  console.log(`Stored GeoJSON in message ${messageId}`);
 }

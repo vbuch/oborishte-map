@@ -73,10 +73,6 @@ export async function mapboxGeocodeIntersection(
         const feature = data.features[0];
         const [lng, lat] = feature.geometry.coordinates;
 
-        console.log(
-          `✅ Mapbox found result (types=${types}): ${feature.place_name}`
-        );
-
         return {
           originalText: query,
           formattedAddress: feature.place_name,
@@ -173,10 +169,6 @@ export async function mapboxGeocodeAddresses(
 
     if (geocoded) {
       geocodedAddresses.push(geocoded);
-      console.log(
-        `✅ Mapbox geocoded: ${address} → ${geocoded.formattedAddress}`,
-        `@ ${geocoded.coordinates.lat}, ${geocoded.coordinates.lng}`
-      );
     } else {
       console.warn(`❌ Failed to geocode with Mapbox: ${address}`);
     }
@@ -206,9 +198,6 @@ export async function mapboxGeocodeIntersections(
 
     if (geocoded) {
       geocodedMap.set(key, geocoded.coordinates);
-      console.log(
-        `✅ Intersection geocoded: ${query} @ ${geocoded.coordinates.lat}, ${geocoded.coordinates.lng}`
-      );
     } else {
       console.warn(`❌ Failed to geocode intersection: ${query}`);
     }
@@ -280,10 +269,6 @@ export async function getMapboxStreetGeometry(
     if (data.code === "Ok" && data.routes && data.routes.length > 0) {
       const route = data.routes[0];
       const coordinates = route.geometry.coordinates;
-
-      console.log(
-        `   ✅ Mapbox Directions: Retrieved geometry with ${coordinates.length} points`
-      );
 
       return coordinates;
     }

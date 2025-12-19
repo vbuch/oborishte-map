@@ -52,11 +52,7 @@ export async function messageIngest(
   let geoJson: GeoJSONFeatureCollection | null =
     options.precomputedGeoJson ?? null;
 
-  if (hasPrecomputedGeoJson) {
-    console.log(
-      "ℹ️  Skipping AI extraction and geocoding: using provided GeoJSON geometry."
-    );
-  } else {
+  if (!hasPrecomputedGeoJson) {
     // Step 2: Extract addresses from message
     const { extractAddressesFromMessage } = await import("./extract-addresses");
     extractedData = await extractAddressesFromMessage(text);

@@ -9,7 +9,6 @@ export async function storeGeocodingInMessage(
   addresses: Address[]
 ): Promise<void> {
   if (addresses.length === 0) {
-    console.log("No geocoded addresses to store");
     return;
   }
 
@@ -17,8 +16,4 @@ export async function storeGeocodingInMessage(
   await messagesRef.doc(messageId).update({
     addresses: JSON.stringify(addresses),
   });
-
-  console.log(
-    `Stored ${addresses.length} geocoded addresses in message ${messageId}`
-  );
 }

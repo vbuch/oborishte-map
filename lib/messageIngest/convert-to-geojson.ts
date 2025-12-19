@@ -60,7 +60,6 @@ export async function convertMessageGeocodingToGeoJson(
   }
 
   const geoJson = await convertToGeoJSON(extractedData, preGeocodedMap);
-  console.log(`Generated GeoJSON with ${geoJson.features.length} features`);
 
   return geoJson;
 }

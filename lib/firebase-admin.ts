@@ -19,8 +19,6 @@ if (!getApps().length) {
         credential: cert(serviceAccount),
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
       });
-
-      console.log("Firebase Admin initialized with service account");
     } catch (error) {
       console.error("Error parsing FIREBASE_SERVICE_ACCOUNT_KEY:", error);
       throw new Error(

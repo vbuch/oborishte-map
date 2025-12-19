@@ -8,14 +8,7 @@ import { ExtractedData } from "@/lib/types";
 export async function extractAddressesFromMessage(
   text: string
 ): Promise<ExtractedData | null> {
-  console.log("Extracting addresses using AI...");
   const extractedData = await extractAddresses(text);
-
-  if (extractedData) {
-    console.log(
-      `Extracted ${extractedData.pins.length} pins and ${extractedData.streets.length} streets`
-    );
-  }
 
   return extractedData;
 }

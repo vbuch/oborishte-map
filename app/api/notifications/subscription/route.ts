@@ -54,11 +54,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(
-      "[POST /api/notifications/subscription] Creating subscription for user:",
-      userId
-    );
-
     const subscriptionsRef = adminDb.collection("notificationSubscriptions");
 
     // Check if subscription already exists for this user
@@ -115,11 +110,6 @@ export async function POST(request: NextRequest) {
       deviceInfo: deviceInfo || {},
     };
 
-    console.log(
-      "[POST /api/notifications/subscription] Subscription created:",
-      subscription.id
-    );
-
     return NextResponse.json(subscription);
   } catch (error) {
     console.error("Error creating subscription:", error);
@@ -145,11 +135,6 @@ export async function DELETE(request: NextRequest) {
       batch.delete(doc.ref);
     });
     await batch.commit();
-
-    console.log(
-      `[DELETE /api/notifications/subscription] Deleted ${snapshot.size} subscriptions for user:`,
-      userId
-    );
 
     return NextResponse.json({ success: true, deleted: snapshot.size });
   } catch (error) {

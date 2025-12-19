@@ -9,7 +9,6 @@ export async function storeAddressesInMessage(
   extractedData: ExtractedData | null
 ): Promise<void> {
   if (!extractedData) {
-    console.log("No extracted data to store");
     return;
   }
 
@@ -17,6 +16,4 @@ export async function storeAddressesInMessage(
   await messagesRef.doc(messageId).update({
     extractedData: JSON.stringify(extractedData),
   });
-
-  console.log(`Stored extracted addresses in message ${messageId}`);
 }

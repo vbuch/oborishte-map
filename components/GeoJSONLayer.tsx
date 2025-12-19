@@ -53,35 +53,17 @@ export default function GeoJSONLayer({
     null
   );
 
-  console.log("GeoJSONLayer rendering with messages:", messages.length);
-
   messages.forEach((message) => {
-    console.log("Processing message:", message.id, "geoJson:", message.geoJson);
-
     if (!message.geoJson?.features) {
-      console.log("No geoJson features for message:", message.id);
       return;
     }
-
-    console.log("Found", message.geoJson.features.length, "features");
 
     message.geoJson.features.forEach((feature, featureIndex) => {
       const key = `${message.id}-geojson-${featureIndex}`;
 
-      console.log("Rendering feature:", {
-        key,
-        type: feature.geometry.type,
-        properties: feature.properties,
-        coordinates: feature.geometry.coordinates,
-      });
-
       // Render based on geometry type
       if (feature.geometry.type === "Point") {
         const coords = feature.geometry.coordinates;
-        console.log("Creating Point marker at:", {
-          lat: coords[1],
-          lng: coords[0],
-        });
 
         features.push(
           <Marker
@@ -98,7 +80,6 @@ export default function GeoJSONLayer({
             title={feature.properties?.address || "Pin"}
             zIndex={10}
             onClick={() => {
-              console.log("GeoJSON point clicked:", feature.properties);
               if (message.id && onFeatureClick) {
                 onFeatureClick(message.id);
               }
@@ -127,7 +108,6 @@ export default function GeoJSONLayer({
               clickable: true,
             }}
             onClick={() => {
-              console.log("GeoJSON line clicked:", feature.properties);
               if (message.id && onFeatureClick) {
                 onFeatureClick(message.id);
               }
@@ -153,7 +133,6 @@ export default function GeoJSONLayer({
               clickable: true,
             }}
             onClick={() => {
-              console.log("GeoJSON polygon clicked:", feature.properties);
               if (message.id && onFeatureClick) {
                 onFeatureClick(message.id);
               }

@@ -33,8 +33,6 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
     const { userId } = await verifyAuthToken(authHeader);
 
-    console.log("[GET /api/interests] Fetching interests for userId:", userId);
-
     const interestsRef = adminDb.collection("interests");
 
     // Query without orderBy initially to avoid index requirement
@@ -45,23 +43,9 @@ export async function GET(request: NextRequest) {
         .where("userId", "==", userId)
         .orderBy("createdAt", "desc")
         .get();
-      console.log(
-        "[GET /api/interests] Query with orderBy successful, found:",
-        snapshot.size,
-        "interests"
-      );
-    } catch (indexError: any) {
+    } catch (indexError) {
       // If index doesn't exist, fall back to query without orderBy
-      console.log(
-        "[GET /api/interests] Composite index not ready, falling back:",
-        indexError.message
-      );
       snapshot = await interestsRef.where("userId", "==", userId).get();
-      console.log(
-        "[GET /api/interests] Simple query successful, found:",
-        snapshot.size,
-        "interests"
-      );
     }
 
     const interests: Interest[] = [];
@@ -84,11 +68,6 @@ export async function GET(request: NextRequest) {
       return dateB - dateA; // descending
     });
 
-    console.log(
-      "[GET /api/interests] Returning",
-      interests.length,
-      "interests"
-    );
     return NextResponse.json({ interests });
   } catch (error) {
     console.error("[GET /api/interests] Error:", error);
@@ -120,15 +99,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { coordinates, radius } = body;
 
-    console.log(
-      "[POST /api/interests] Creating interest for userId:",
-      userId,
-      "coords:",
-      coordinates,
-      "radius:",
-      radius
-    );
-
     // Validate coordinates
     if (
       !coordinates ||
@@ -158,11 +128,6 @@ export async function POST(request: NextRequest) {
 
     const interestsRef = adminDb.collection("interests");
     const docRef = await interestsRef.add(interestData);
-
-    console.log(
-      "[POST /api/interests] Interest created successfully with ID:",
-      docRef.id
-    );
 
     const newInterest: Interest = {
       id: docRef.id,

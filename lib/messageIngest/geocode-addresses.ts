@@ -3,7 +3,7 @@ import {
   geocodeIntersectionsForStreets,
 } from "@/lib/geocoding-router";
 import { Address, ExtractedData, StreetSection } from "@/lib/types";
-import { STREET_GEOCODING_ALGO, PIN_GEOCODING_ALGO } from "@/lib/config";
+import { STREET_GEOCODING_ALGO } from "@/lib/config";
 
 // Internal types for the geocoding pipeline
 export interface GeocodingResult {
@@ -75,7 +75,6 @@ export async function geocodeAddressesFromExtractedData(
     STREET_GEOCODING_ALGO === "overpass"
   ) {
     // Directions/Overpass-based approach: handle pins and streets separately
-    console.log(`Geocoding pins using: ${PIN_GEOCODING_ALGO}`);
 
     // Geocode pins
     if (extractedData.pins.length > 0) {
@@ -89,7 +88,6 @@ export async function geocodeAddressesFromExtractedData(
     }
 
     // Geocode street intersections
-    console.log(`Geocoding streets using: ${STREET_GEOCODING_ALGO}`);
     if (extractedData.streets.length > 0) {
       const streetGeocodedMap = await geocodeIntersectionsForStreets(
         extractedData.streets
@@ -118,17 +116,11 @@ export async function geocodeAddressesFromExtractedData(
       );
 
       if (missingEndpoints.length > 0) {
-        console.log(
-          `⚠️  ${missingEndpoints.length} street endpoints not found via ${STREET_GEOCODING_ALGO}, trying fallback geocoding...`
-        );
         const fallbackGeocoded = await geocodeAddresses(missingEndpoints);
 
         fallbackGeocoded.forEach((addr) => {
           preGeocodedMap.set(addr.originalText, addr.coordinates);
           addresses.push(addr);
-          console.log(
-            `   ✅ Fallback geocoded: "${addr.originalText}" → [${addr.coordinates.lat}, ${addr.coordinates.lng}]`
-          );
         });
       }
     }
@@ -137,15 +129,7 @@ export async function geocodeAddressesFromExtractedData(
     const addressesToGeocode =
       collectAllAddressesFromExtractedData(extractedData);
 
-    console.log(
-      `Collected ${addressesToGeocode.size} unique addresses to geocode`
-    );
-
     addresses = await geocodeAddresses(Array.from(addressesToGeocode));
-
-    console.log(
-      `Successfully geocoded ${addresses.length}/${addressesToGeocode.size} addresses`
-    );
 
     addresses.forEach((addr) => {
       preGeocodedMap.set(addr.originalText, addr.coordinates);

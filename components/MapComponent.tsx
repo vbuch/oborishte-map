@@ -103,14 +103,6 @@ export default function MapComponent({
   const mapRef = useRef<google.maps.Map | null>(null);
   const latestCenterRef = useRef(OBORISHTE_CENTER);
 
-  console.log("[MapComponent] RENDER:", {
-    interestCount: interests.length,
-    targetModeActive: targetMode?.active,
-    editingId: targetMode?.editingInterestId,
-    willRenderInterestCircles: interests.length > 0 && !!onInterestClick,
-    willRenderTargetMode: !!targetMode?.active,
-  });
-
   const centerMap = useCallback(
     (
       lat: number,
@@ -138,7 +130,6 @@ export default function MapComponent({
 
   const onMapLoad = useCallback(
     (map: google.maps.Map) => {
-      console.log("[MapComponent] onMapLoad called, map instance:", map);
       mapRef.current = map;
       // Notify parent that map is ready and pass the centerMap function and map instance
       if (onMapReady) {

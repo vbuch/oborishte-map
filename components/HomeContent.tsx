@@ -53,12 +53,6 @@ export default function HomeContent({
   const { showPrompt, onAccept, onDecline, checkAndPromptForNotifications } =
     useNotificationPrompt();
 
-  console.log(
-    "[HomeContent] interests from hook:",
-    interests.length,
-    interests.map((i) => i.id)
-  );
-
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();

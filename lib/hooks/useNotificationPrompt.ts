@@ -40,7 +40,6 @@ export function useNotificationPrompt() {
         },
         onDecline: () => {
           setPromptState(null);
-          console.log("User declined notification prompt");
         },
       });
     },
