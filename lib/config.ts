@@ -2,21 +2,14 @@
  * Geocoding configuration
  */
 
-export type GeocodingAlgorithm =
-  | "google_geocoding"
-  | "google_directions"
-  | "mapbox_geocoding"
-  | "overpass";
+export type GeocodingAlgorithm = "google_geocoding" | "overpass";
 
 // Configuration: Choose which geocoding algorithm to use for STREETS
-// - google_directions: Google Directions API (best for street geometries)
-// - mapbox_geocoding: Mapbox Geocoding API (requires SECRET token for server-side use)
 // - overpass: OpenStreetMap Overpass API + Turf.js (most accurate for intersections, uses real OSM geometries)
 export const STREET_GEOCODING_ALGO: GeocodingAlgorithm = "overpass";
 
 // Configuration: Choose which geocoding algorithm to use for PINS (specific addresses)
 // - google_geocoding: Google Geocoding API (most reliable for specific addresses with house numbers)
-// - mapbox_geocoding: Mapbox Geocoding API
 // - overpass: OpenStreetMap Nominatim (free but less accurate for specific addresses)
 export const PIN_GEOCODING_ALGO: GeocodingAlgorithm = "google_geocoding";
 
@@ -31,12 +24,8 @@ console.log(`📍 Pin Geocoding: ${PIN_GEOCODING_ALGO}`);
 export function getDataExtractionPromptPath(): string {
   // Use street geocoding algo for prompt selection (affects intersection format)
   switch (STREET_GEOCODING_ALGO) {
-    case "google_directions":
-      return "lib/prompts/data-extraction-directions.md";
     case "google_geocoding":
       return "lib/prompts/data-extraction.md";
-    case "mapbox_geocoding":
-      return "lib/prompts/data-extraction-mapbox.md";
     case "overpass":
       return "lib/prompts/data-extraction-overpass.md";
     default:

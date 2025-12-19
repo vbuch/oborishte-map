@@ -7,15 +7,6 @@ import { STREET_GEOCODING_ALGO, PIN_GEOCODING_ALGO } from "./config";
 import { Address, StreetSection } from "./types";
 import { geocodeAddresses as geocodeAddressesTraditional } from "./geocoding-service";
 import {
-  geocodeIntersections,
-  geocodeStreetSections,
-  geocodeAddress as geocodeAddressDirections,
-} from "./directions-geocoding-service";
-import {
-  mapboxGeocodeAddresses,
-  mapboxGeocodeIntersections,
-} from "./mapbox-geocoding-service";
-import {
   overpassGeocodeAddresses,
   overpassGeocodeIntersections,
 } from "./overpass-geocoding-service";
@@ -29,23 +20,6 @@ export async function geocodeAddresses(
   if (PIN_GEOCODING_ALGO === "overpass") {
     // Use OSM Overpass API + Turf.js for all geocoding
     return overpassGeocodeAddresses(addresses);
-  } else if (PIN_GEOCODING_ALGO === "mapbox_geocoding") {
-    // Use Mapbox for all geocoding
-    return mapboxGeocodeAddresses(addresses);
-  } else if (PIN_GEOCODING_ALGO === "google_directions") {
-    // For directions mode, we need to handle addresses differently
-    // For now, use the traditional method for simple addresses
-    const results: Address[] = [];
-
-    for (const addr of addresses) {
-      const geocoded = await geocodeAddressDirections(addr);
-      if (geocoded) {
-        results.push(geocoded);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    return results;
   } else {
     // Default: google_geocoding
     return geocodeAddressesTraditional(addresses);
@@ -62,19 +36,6 @@ export async function geocodeStreets(
     // For Overpass-based, geocode endpoints
     const endpointAddresses = streets.flatMap((s) => [s.from, s.to]);
     return overpassGeocodeAddresses(endpointAddresses);
-  } else if (STREET_GEOCODING_ALGO === "mapbox_geocoding") {
-    // For Mapbox, geocode endpoints
-    const endpointAddresses = streets.flatMap((s) => [s.from, s.to]);
-    return mapboxGeocodeAddresses(endpointAddresses);
-  } else if (STREET_GEOCODING_ALGO === "google_directions") {
-    // Use directions-based approach for street sections
-    const sections: [string, string, string][] = streets.map((s) => [
-      s.street,
-      s.from,
-      s.to,
-    ]);
-
-    return geocodeStreetSections(sections, 10); // 10m buffer
   } else {
     // Traditional approach: geocode endpoints
     const endpointAddresses = streets.flatMap((s) => [s.from, s.to]);
@@ -101,18 +62,12 @@ export async function getStreetGeometry(
       endCoords
     );
     return geometry as [number, number][] | null;
-  } else if (STREET_GEOCODING_ALGO === "mapbox_geocoding") {
-    // Use Mapbox Directions API
-    const { getMapboxStreetGeometry } = await import(
-      "./mapbox-geocoding-service"
-    );
-    return getMapboxStreetGeometry(startCoords, endCoords);
   } else {
-    // Use Google Directions API (for both google_geocoding and google_directions)
-    const { getGoogleStreetGeometry } = await import(
-      "./directions-geocoding-service"
-    );
-    return getGoogleStreetGeometry(startCoords, endCoords);
+    // Default: create a simple straight line between endpoints
+    return [
+      [startCoords.lng, startCoords.lat],
+      [endCoords.lng, endCoords.lat],
+    ];
   }
 }
 
@@ -155,67 +110,6 @@ export async function geocodeIntersectionsForStreets(
       if (parts.length === 2) {
         const crossStreet = parts[1].trim();
         geocodedMap.set(crossStreet, address.coordinates);
-      }
-    });
-  } else if (STREET_GEOCODING_ALGO === "mapbox_geocoding") {
-    // Extract unique intersections
-    const intersectionSet = new Set<string>();
-    const intersectionPairs: [string, string, string][] = [];
-
-    streets.forEach((street) => {
-      const fromKey = `${street.street}||${street.from}`;
-      if (!intersectionSet.has(fromKey)) {
-        intersectionSet.add(fromKey);
-        intersectionPairs.push([street.street, street.from, street.from]);
-      }
-
-      const toKey = `${street.street}||${street.to}`;
-      if (!intersectionSet.has(toKey)) {
-        intersectionSet.add(toKey);
-        intersectionPairs.push([street.street, street.to, street.to]);
-      }
-    });
-
-    const pairsForGeocoding: [string, string][] = intersectionPairs.map(
-      ([street, cross]) => [street, cross]
-    );
-    const geocoded = await mapboxGeocodeIntersections(pairsForGeocoding);
-
-    geocoded.forEach((coords, key) => {
-      geocodedMap.set(key, coords);
-    });
-  } else if (STREET_GEOCODING_ALGO === "google_directions") {
-    // Extract unique intersections (street + cross street pairs)
-    const intersectionSet = new Set<string>();
-    const intersectionPairs: [string, string, string][] = []; // [street, crossStreet, crossStreetKey]
-
-    streets.forEach((street) => {
-      // From intersection: street ∩ from
-      const fromKey = `${street.street}||${street.from}`;
-      if (!intersectionSet.has(fromKey)) {
-        intersectionSet.add(fromKey);
-        intersectionPairs.push([street.street, street.from, street.from]);
-      }
-
-      // To intersection: street ∩ to
-      const toKey = `${street.street}||${street.to}`;
-      if (!intersectionSet.has(toKey)) {
-        intersectionSet.add(toKey);
-        intersectionPairs.push([street.street, street.to, street.to]);
-      }
-    });
-
-    // Geocode each intersection
-    const pairsForGeocoding: [string, string][] = intersectionPairs.map(
-      ([street, cross]) => [street, cross]
-    );
-    const geocoded = await geocodeIntersections(pairsForGeocoding);
-
-    // Map results - the key should be the cross street name (from/to value)
-    // because that's what the GeoJSON service uses for lookup
-    intersectionPairs.forEach(([, , crossStreetKey], index) => {
-      if (geocoded[index]) {
-        geocodedMap.set(crossStreetKey, geocoded[index].coordinates);
       }
     });
   } else {
