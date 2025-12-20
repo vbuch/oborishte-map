@@ -70,10 +70,7 @@ export async function geocodeAddressesFromExtractedData(
     return { preGeocodedMap, addresses };
   }
 
-  if (
-    STREET_GEOCODING_ALGO === "google_directions" ||
-    STREET_GEOCODING_ALGO === "overpass"
-  ) {
+  if (STREET_GEOCODING_ALGO === "overpass") {
     // Directions/Overpass-based approach: handle pins and streets separately
 
     // Geocode pins
