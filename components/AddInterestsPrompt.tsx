@@ -39,12 +39,11 @@ export default function AddInterestsPrompt({
         </div>
         <div className="flex-1">
           <h3 className="text-base font-semibold text-gray-900 mb-2">
-            Get notified about local announcements
+            Получавай известия за местни съобщения
           </h3>
           <p className="text-sm text-gray-600">
-            Add circles of interest and subscribe to get notified whenever there
-            is an announcement in those circles. Stay informed about what
-            matters to you!
+            Добави зони, които следиш, и се абонирай, за да получаваш известия,
+            когато има съобщение в тях. Следи това, което ти е важно.
           </p>
         </div>
       </div>
@@ -64,7 +63,7 @@ export default function AddInterestsPrompt({
           >
             <path d="M12 4v16m8-8H4"></path>
           </svg>
-          Add interests
+          Добави зона
         </button>
       </div>
     </div>

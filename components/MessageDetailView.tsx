@@ -78,7 +78,7 @@ export default function MessageDetailView({
 
       {/* Slide-in panel - bottom sheet on mobile, sidebar on desktop */}
       <aside
-        aria-label="Message details"
+        aria-label="Детайли за сигнала"
         className={`fixed z-40 bg-white shadow-2xl overflow-y-auto transition-all duration-300 ease-out
           ${/* Mobile: bottom sheet */ ""}
           bottom-0 left-0 right-0 max-h-[85vh] rounded-t-2xl
@@ -104,16 +104,16 @@ export default function MessageDetailView({
             className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-gray-300 rounded-full sm:hidden cursor-grab active:cursor-grabbing"
             {...handlers}
             onClick={onClose}
-            aria-label="Drag to close or tap to close"
+            aria-label="Плъзни, за да затвориш, или натисни, за да затвориш"
           />
 
           <h2 className="text-lg sm:text-xl font-semibold text-gray-900 pt-3 sm:pt-0">
-            Message Details
+            Детайли за сигнала
           </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full mt-3 sm:mt-0"
-            aria-label="Close detail view"
+            aria-label="Затвори детайлите"
           >
             <svg
               className="w-6 h-6"
@@ -137,9 +137,7 @@ export default function MessageDetailView({
         >
           {/* Date */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">
-              Submitted
-            </h3>
+            <h3 className="text-sm font-medium text-gray-500 mb-1">Подаден</h3>
             <p className="text-base text-gray-900">
               {formatDate(message.createdAt)}
             </p>
@@ -147,7 +145,7 @@ export default function MessageDetailView({
 
           {/* Message Text */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Message</h3>
+            <h3 className="text-sm font-medium text-gray-500 mb-1">Текст</h3>
             <p className="text-base text-gray-900 whitespace-pre-wrap">
               {message.text}
             </p>
@@ -157,7 +155,7 @@ export default function MessageDetailView({
           {message.extractedData?.responsible_entity && (
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">
-                Responsible Entity
+                Отговорна институция
               </h3>
               <p className="text-base text-gray-900">
                 {message.extractedData.responsible_entity}
@@ -170,7 +168,7 @@ export default function MessageDetailView({
             message.extractedData.pins.length > 0 && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-2">
-                  Locations
+                  Локации
                 </h3>
                 <div className="space-y-3">
                   {message.extractedData.pins.map((pin, index) => (
@@ -203,7 +201,7 @@ export default function MessageDetailView({
             message.extractedData.streets.length > 0 && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-2">
-                  Street Sections
+                  Улични участъци
                 </h3>
                 <div className="space-y-3">
                   {message.extractedData.streets.map((street, index) => (
@@ -215,7 +213,7 @@ export default function MessageDetailView({
                         {street.street}
                       </p>
                       <p className="text-xs text-gray-600 mb-1">
-                        From: {street.from} → To: {street.to}
+                        От: {street.from} → До: {street.to}
                       </p>
                       {street.timespans && street.timespans.length > 0 && (
                         <div className="text-xs text-gray-600 space-y-1">
@@ -237,9 +235,7 @@ export default function MessageDetailView({
           {/* Addresses (if no extracted data) */}
           {message.addresses && message.addresses.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">
-                Addresses
-              </h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Адреси</h3>
               <div className="space-y-2">
                 {message.addresses.map((address, index) => (
                   <button
@@ -272,12 +268,12 @@ export default function MessageDetailView({
           {message.geoJson?.features && (
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">
-                Map Features
+                Обекти на картата
               </h3>
               <p className="text-sm text-gray-900">
                 {message.geoJson.features.length}{" "}
-                {message.geoJson.features.length === 1 ? "feature" : "features"}{" "}
-                on map
+                {message.geoJson.features.length === 1 ? "обект" : "обекта"} на
+                картата
               </p>
             </div>
           )}

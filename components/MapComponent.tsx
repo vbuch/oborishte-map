@@ -210,7 +210,7 @@ export default function MapComponent({
         </GoogleMap>
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-100">
-          <p className="text-red-600">Google Maps API key is not configured</p>
+          <p className="text-red-600">Няма настроен ключ за Google Maps API</p>
         </div>
       )}
     </div>

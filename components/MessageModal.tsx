@@ -48,7 +48,7 @@ export default function MessageModal({
     e.preventDefault();
 
     if (!user) {
-      setError("Please sign in to submit a message");
+      setError("Влез, за да изпратиш сигнал.");
       return;
     }
 
@@ -87,7 +87,7 @@ export default function MessageModal({
       const errorMessage =
         err instanceof Error
           ? err.message
-          : "Failed to submit message. Please try again.";
+          : "Не успях да изпратя сигнала. Опитай пак.";
       setError(errorMessage);
       console.error("Error submitting message:", err);
     } finally {
@@ -110,12 +110,12 @@ export default function MessageModal({
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-semibold text-gray-900">
-              Submit a Message
+              Подай сигнал
             </h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Close modal"
+              aria-label="Затвори прозореца"
             >
               <svg
                 className="w-6 h-6"
@@ -139,8 +139,7 @@ export default function MessageModal({
           ) : !user ? (
             <div className="bg-blue-50 border border-blue-200 rounded-md p-6">
               <p className="text-blue-800 mb-4">
-                Please sign in to submit messages about issues in Oborishte
-                District.
+                Влез, за да подаваш сигнали за проблеми в район Оборище.
               </p>
               <button
                 onClick={signInWithGoogle}
@@ -164,7 +163,7 @@ export default function MessageModal({
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Sign in with Google
+                Влез с Google
               </button>
             </div>
           ) : (
@@ -174,7 +173,7 @@ export default function MessageModal({
                   htmlFor="message"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Enter your message (include addresses in Sofia, Oborishte):
+                  Напиши сигнала си (включи адреси в София, Оборище):
                 </label>
                 <textarea
                   id="message"
@@ -182,7 +181,7 @@ export default function MessageModal({
                   onChange={(e) => setText(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   rows={6}
-                  placeholder="Example: There's a pothole on ul. Oborishte 15, near the intersection with Rakovska Street."
+                  placeholder="Пример: Има дупка на ул. Оборище 15, близо до кръстовището с ул. Раковска."
                   required
                   disabled={isSubmitting}
                 />
@@ -194,7 +193,7 @@ export default function MessageModal({
               )}
               {success && (
                 <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md text-sm">
-                  Message submitted successfully! Processing addresses...
+                  Сигналът е изпратен! Обработвам адресите...
                 </div>
               )}
               <div className="flex gap-3 justify-end">
@@ -204,14 +203,14 @@ export default function MessageModal({
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                   disabled={isSubmitting}
                 >
-                  Cancel
+                  Отказ
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || !text.trim()}
                   className="px-6 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Message"}
+                  {isSubmitting ? "Изпращам..." : "Изпрати сигнала"}
                 </button>
               </div>
             </form>

@@ -50,7 +50,7 @@ export default function Header({ onOpenMessageModal }: HeaderProps) {
                     {user.photoURL && (
                       <img
                         src={user.photoURL}
-                        alt={user.displayName || "User"}
+                        alt={user.displayName || "Потребител"}
                         className="w-8 h-8 rounded-full"
                       />
                     )}
@@ -59,7 +59,7 @@ export default function Header({ onOpenMessageModal }: HeaderProps) {
                     <button
                       onClick={onOpenMessageModal}
                       className="p-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-all duration-200"
-                      aria-label="Send message"
+                      aria-label="Изпрати съобщение"
                     >
                       <svg
                         className="w-5 h-5"
@@ -78,7 +78,7 @@ export default function Header({ onOpenMessageModal }: HeaderProps) {
                     onClick={signOut}
                     className="px-4 py-2 text-sm font-medium text-white bg-[#E74C3C] rounded-md hover:bg-[#C0392B] transition-colors"
                   >
-                    Sign Out
+                    Излез
                   </button>
                 </div>
               )}

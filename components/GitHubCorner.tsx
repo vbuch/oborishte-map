@@ -5,7 +5,7 @@ export default function GitHubCorner() {
     <a
       href="https://github.com/vbuch/oborishte-map"
       className="github-corner"
-      aria-label="View source on GitHub"
+      aria-label="Виж кода в GitHub"
       target="_blank"
       rel="noopener noreferrer"
     >

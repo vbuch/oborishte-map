@@ -97,7 +97,7 @@ export default function HomeContent() {
       const data = await response.json();
       setMessages(data.messages || []);
     } catch (err) {
-      setError("Failed to load messages. Please refresh the page.");
+      setError("Не успях да заредя сигналите. Презареди страницата.");
       console.error("Error fetching messages:", err);
     } finally {
       setIsLoading(false);
@@ -243,7 +243,7 @@ export default function HomeContent() {
         // Refresh to sync state
         globalThis.location.reload();
       } else {
-        alert("Failed to delete interest. Please try again.");
+        alert("Не успях да изтрия зоната. Опитай пак.");
       }
     }
   }, [selectedInterest, deleteInterest]);
@@ -275,7 +275,7 @@ export default function HomeContent() {
           setTargetMode({ active: false });
         } catch (error) {
           console.error("Failed to save interest:", error);
-          alert("Failed to save interest. Please try again.");
+          alert("Не успях да запазя зоната. Опитай пак.");
         }
       })();
     },
@@ -308,7 +308,7 @@ export default function HomeContent() {
       <div className="flex-1 relative" style={{ minHeight: `${mapHeight}px` }}>
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-            <p className="text-gray-600">Loading map...</p>
+            <p className="text-gray-600">Зареждане на картата...</p>
           </div>
         ) : (
           <>
@@ -359,7 +359,7 @@ export default function HomeContent() {
             type="button"
             className="fixed inset-0 z-40 bg-transparent cursor-default"
             onClick={handleCloseInterestMenu}
-            aria-label="Close menu"
+            aria-label="Затвори менюто"
           />
           {/* Menu */}
           <div
@@ -385,7 +385,7 @@ export default function HomeContent() {
               >
                 <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
               </svg>
-              Move
+              Премести
             </button>
             <button
               onClick={handleDeleteInterest}
@@ -402,7 +402,7 @@ export default function HomeContent() {
               >
                 <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
               </svg>
-              Delete
+              Изтрий
             </button>
           </div>
         </>

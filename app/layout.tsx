@@ -3,8 +3,8 @@ import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 
 export const metadata: Metadata = {
-  title: "Oborishte Map - Report Issues in Sofia",
-  description: "Report and track issues in Oborishte District, Sofia, Bulgaria",
+  title: "Карта Оборище",
+  description: "Следи събитията в район Оборище",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="bg">
       <body>
         <ClientLayout>{children}</ClientLayout>
       </body>

@@ -120,7 +120,7 @@ export default function InterestTargetMode({
           {/* Radius Slider */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Radius: {radius}m
+              Радиус: {radius}м
             </label>
             <input
               type="range"
@@ -144,14 +144,14 @@ export default function InterestTargetMode({
               disabled={isSaving}
               className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Cancel
+              Отказ
             </button>
             <button
               onClick={handleSave}
               disabled={!currentCenter || isSaving}
               className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? "Saving..." : "Save Location"}
+              {isSaving ? "Запазвам..." : "Запази зоната"}
             </button>
           </div>
         </div>

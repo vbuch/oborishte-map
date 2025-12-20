@@ -77,7 +77,7 @@ export default function GeoJSONLayer({
               strokeColor: "#ffffff",
               scale: hoveredFeature === key ? 1.2 : 1,
             }}
-            title={feature.properties?.address || "Pin"}
+            title={feature.properties?.address || "Маркер"}
             zIndex={10}
             onClick={() => {
               if (message.id && onFeatureClick) {
