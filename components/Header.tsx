@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import AuthButton from "./AuthButton";
 import { useAuth } from "@/lib/auth-context";
 
 interface HeaderProps {
@@ -13,7 +12,7 @@ export default function Header({
   onOpenMessageModal,
   onAddInterest,
 }: HeaderProps) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [logoError, setLogoError] = useState(false);
 
   return (
@@ -47,9 +46,30 @@ export default function Header({
               </div>
             </div>
 
-            {/* Right side - Auth Button */}
+            {/* Right side - User Info */}
             <div>
-              <AuthButton />
+              {user && (
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    {user.photoURL && (
+                      <img
+                        src={user.photoURL}
+                        alt={user.displayName || "User"}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    )}
+                    <span className="text-sm text-white hidden sm:inline">
+                      {user.displayName || user.email}
+                    </span>
+                  </div>
+                  <button
+                    onClick={signOut}
+                    className="px-4 py-2 text-sm font-medium text-white bg-[#E74C3C] rounded-md hover:bg-[#C0392B] transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

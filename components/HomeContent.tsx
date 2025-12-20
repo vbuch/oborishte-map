@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import MapComponent from "@/components/MapComponent";
 import MessageDetailView from "@/components/MessageDetailView";
 import NotificationPrompt from "@/components/NotificationPrompt";
+import LoginPrompt from "@/components/LoginPrompt";
 import { Message, Interest } from "@/lib/types";
 import { useInterests } from "@/lib/hooks/useInterests";
 import { useNotificationPrompt } from "@/lib/hooks/useNotificationPrompt";
@@ -417,6 +418,9 @@ export default function HomeContent({
       {showPrompt && (
         <NotificationPrompt onAccept={onAccept} onDecline={onDecline} />
       )}
+
+      {/* Login prompt for non-authenticated users */}
+      {!user && <LoginPrompt />}
     </div>
   );
 }
