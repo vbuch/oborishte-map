@@ -14,17 +14,17 @@ export default function Header({ onOpenMessageModal }: HeaderProps) {
   return (
     <>
       {/* Top Header - Dark Blue */}
-      <header className="bg-[#2c3e50] text-white">
+      <header className="bg-[#2c3e50] text-white relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main Header with Logo */}
           <div className="flex items-center justify-between py-3">
             {/* Left side - Logo and Title */}
             <div className="flex items-center gap-4">
-              {/* Logo - contained within header */}
-              <div className="flex-shrink-0">
+              {/* Logo - overlapping content below */}
+              <div className="flex-shrink-0 relative -mb-20">
                 {logoError ? (
-                  <div className="h-12 w-12 bg-white rounded flex items-center justify-center border-2 border-yellow-400">
-                    <span className="text-[#2c3e50] font-bold text-xs text-center leading-tight">
+                  <div className="h-32 w-32 bg-white rounded flex items-center justify-center border-2 border-yellow-400 relative z-30">
+                    <span className="text-[#2c3e50] font-bold text-2xl text-center leading-tight">
                       СО
                     </span>
                   </div>
@@ -32,7 +32,7 @@ export default function Header({ onOpenMessageModal }: HeaderProps) {
                   <img
                     src="/logo.png"
                     alt="СО Оборище"
-                    className="h-12 w-auto object-contain"
+                    className="h-32 w-auto object-contain relative z-30"
                     onError={() => setLogoError(true)}
                   />
                 )}
