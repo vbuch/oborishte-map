@@ -202,7 +202,10 @@ async function matchMessagesWithInterests(
           `   ✅ Match: Message ${message.id.substring(
             0,
             8
-          )} → User ${interest.userId.substring(0, 8)} (${Math.round(
+          )} → User ${interest.userId.substring(
+            0,
+            8
+          )} → Interest ${interest.id.substring(0, 8)} (${Math.round(
             distance
           )}m)`
         );
@@ -398,7 +401,32 @@ async function sendNotifications(
   let successCount = 0;
   let errorCount = 0;
 
+  // Group matches by userId-messageId to send only one notification per user per message
+  const notificationMap = new Map<string, NotificationMatch>();
   for (const match of matches) {
+    const key = `${match.userId}-${match.messageId}`;
+    const existing = notificationMap.get(key);
+    // Keep the match with the smallest distance
+    if (
+      !existing ||
+      (match.distance &&
+        (!existing.distance || match.distance < existing.distance))
+    ) {
+      notificationMap.set(key, match);
+    }
+  }
+
+  const uniqueMatches = Array.from(notificationMap.values());
+  console.log(
+    `   ℹ️  Sending ${uniqueMatches.length} unique notifications (deduplicated from ${matches.length} matches)`
+  );
+
+  // Track which matches were processed to mark them all as notified
+  const allMatchIds = matches
+    .map((m) => m.id)
+    .filter((id): id is string => !!id);
+
+  for (const match of uniqueMatches) {
     if (!match.id) {
       continue;
     }
@@ -430,29 +458,35 @@ async function sendNotifications(
       continue;
     }
 
-    // Send to all user's devices
-    for (const subscription of subscriptions) {
-      const result = await sendPushNotification(
-        messaging,
-        subscription,
-        message,
-        match
+    // Send to the first active subscription (one notification per user per message)
+    const subscription = subscriptions[0];
+    const result = await sendPushNotification(
+      messaging,
+      subscription,
+      message,
+      match
+    );
+
+    if (result.success) {
+      successCount++;
+      console.log(
+        `   ✅ Sent to user ${match.userId.substring(
+          0,
+          8
+        )} for message ${match.messageId.substring(0, 8)}`
       );
-
-      if (result.success) {
-        successCount++;
-        console.log(`   ✅ Sent to user ${match.userId.substring(0, 8)}`);
-      } else {
-        errorCount++;
-      }
-
-      // Mark match as notified (whether successful or not to avoid retry loops)
-      await matchesRef.doc(match.id).update({
-        notified: true,
-        notifiedAt: new Date(),
-        notificationError: result.error || null,
-      });
+    } else {
+      errorCount++;
     }
+  }
+
+  // Mark all related matches as notified
+  console.log(`\n   📝 Marking ${allMatchIds.length} matches as notified...`);
+  for (const matchId of allMatchIds) {
+    await matchesRef.doc(matchId).update({
+      notified: true,
+      notifiedAt: new Date(),
+    });
   }
 
   console.log(`\n   📊 Notifications sent: ${successCount}`);
