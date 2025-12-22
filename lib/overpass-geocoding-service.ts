@@ -86,10 +86,6 @@ async function getStreetGeometryFromOverpass(
       `;
     }
 
-    console.log(
-      `   Querying Overpass for: "${streetName}" → normalized: "${normalizedName}"`
-    );
-
     // Try each Overpass instance until one works
     let responseData: any = null;
     let lastError: Error | null = null;
@@ -109,9 +105,6 @@ async function getStreetGeometryFromOverpass(
         }
 
         responseData = await response.json();
-        console.log(
-          `   ✓ Successfully fetched from ${new URL(instance).hostname}`
-        );
         break; // Success, exit loop
       } catch (error) {
         console.log(`   ✗ Failed with ${new URL(instance).hostname}: ${error}`);
@@ -126,11 +119,9 @@ async function getStreetGeometryFromOverpass(
 
     if (!responseData.elements || responseData.elements.length === 0) {
       // No OSM ways found - API request succeeded but no data for this street name
-      console.log(`   ℹ️  No OSM ways/nodes found for: "${streetName}"`);
+      console.log(`❌ Couldn't find: "${streetName}"`);
       return null;
     }
-
-    console.log(`   Found ${responseData.elements.length} OSM element(s)`);
 
     // Build MultiLineString with each OSM way as a separate LineString
     // For squares (nodes), create a small point geometry
@@ -347,7 +338,6 @@ export async function overpassGeocodeIntersections(
       const geom2 = await getStreetGeometryFromOverpass(street2Name);
 
       if (!geom1 || !geom2) {
-        console.log(`   ℹ️  Missing geometry - cannot calculate intersection`);
         continue;
       }
 
