@@ -2,9 +2,14 @@
 
 import dotenv from "dotenv";
 import { resolve } from "node:path";
-import { chromium, Browser, Page } from "playwright";
-import TurndownService from "turndown";
+import { Browser, Page } from "playwright";
+import type { Firestore } from "firebase-admin/firestore";
 import { SourceDocument, PostLink } from "./types";
+import { launchBrowser } from "../shared/browser";
+import { createTurndownService } from "../shared/markdown";
+import { delay } from "../shared/rate-limiting";
+import { isUrlProcessed, saveSourceDocument } from "../shared/firestore";
+import { parseBulgarianDate } from "../shared/date-utils";
 
 // Load environment variables from .env.local
 dotenv.config({ path: resolve(process.cwd(), ".env.local") });
@@ -15,81 +20,7 @@ const SOURCE_TYPE = "rayon-oborishte-bg";
 const DELAY_BETWEEN_REQUESTS = 2000; // 2 seconds
 
 // Initialize Turndown for HTML to Markdown conversion
-const turndownService = new TurndownService({
-  headingStyle: "atx",
-  codeBlockStyle: "fenced",
-});
-
-/**
- * Parse Bulgarian date format (DD.MM.YYYY) to ISO string
- */
-function parseBulgarianDate(dateStr: string): string {
-  try {
-    // Format: "15.12.2025"
-    const parts = dateStr.trim().split(".");
-    if (parts.length === 3) {
-      const [day, month, year] = parts;
-      const date = new Date(`${year}-${month}-${day}`);
-      if (!Number.isNaN(date.getTime())) {
-        return date.toISOString();
-      }
-    }
-    console.warn(`⚠️ Unable to parse date: ${dateStr}, using current date`);
-    return new Date().toISOString();
-  } catch (error) {
-    console.error(`❌ Error parsing date: ${dateStr}`, error);
-    return new Date().toISOString();
-  }
-}
-
-/**
- * Wait for specified milliseconds
- */
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Check if a URL has already been processed
- */
-async function isUrlProcessed(url: string, adminDb: any): Promise<boolean> {
-  try {
-    // Use URL as document ID (encode it safely)
-    const docId = Buffer.from(url).toString("base64").replaceAll(/[/+=]/g, "_");
-    const docRef = adminDb.collection("sources").doc(docId);
-    const doc = await docRef.get();
-    return doc.exists;
-  } catch (error) {
-    console.error(`❌ Error checking if URL is processed: ${url}`, error);
-    throw error;
-  }
-}
-
-/**
- * Save source document to Firestore
- */
-async function saveSourceDocument(
-  doc: SourceDocument,
-  adminDb: any
-): Promise<void> {
-  try {
-    // Use URL as document ID (encode it safely)
-    const docId = Buffer.from(doc.url)
-      .toString("base64")
-      .replaceAll(/[/+=]/g, "_");
-    const docRef = adminDb.collection("sources").doc(docId);
-
-    await docRef.set({
-      ...doc,
-      crawledAt: new Date(doc.crawledAt),
-    });
-
-    console.log(`✅ Saved document: ${doc.title.substring(0, 50)}...`);
-  } catch (error) {
-    console.error(`❌ Error saving document to Firestore:`, error);
-    throw error;
-  }
-}
+const turndownService = createTurndownService();
 
 /**
  * Extract post links from the index page
@@ -219,17 +150,22 @@ async function extractPostDetails(
 async function processPost(
   browser: Browser,
   postLink: PostLink,
-  adminDb: any
+  adminDb: Firestore
 ): Promise<void> {
   const { url, title } = postLink;
 
   console.log(`\n🔍 Processing: ${title.substring(0, 60)}...`);
 
   // Check if already processed
-  const alreadyProcessed = await isUrlProcessed(url, adminDb);
-  if (alreadyProcessed) {
-    console.log(`⏭️  Skipped (already processed): ${url}`);
-    return;
+  try {
+    const alreadyProcessed = await isUrlProcessed(url, adminDb);
+    if (alreadyProcessed) {
+      console.log(`⏭️  Skipped (already processed): ${url}`);
+      return;
+    }
+  } catch (error) {
+    console.error(`❌ Error checking if URL is processed: ${url}`, error);
+    throw error;
   }
 
   // Open new page for this post
@@ -278,9 +214,7 @@ export async function crawl(): Promise<void> {
   try {
     // Launch browser
     console.log("🌐 Launching browser...");
-    browser = await chromium.launch({
-      headless: true,
-    });
+    browser = await launchBrowser();
 
     // Open index page
     const page = await browser.newPage();
@@ -303,13 +237,18 @@ export async function crawl(): Promise<void> {
     let skippedCount = 0;
 
     for (const postLink of postLinks) {
-      const wasProcessed = await isUrlProcessed(postLink.url, adminDb);
+      try {
+        const wasProcessed = await isUrlProcessed(postLink.url, adminDb);
 
-      if (wasProcessed) {
-        skippedCount++;
-      } else {
-        await processPost(browser, postLink, adminDb);
-        processedCount++;
+        if (wasProcessed) {
+          skippedCount++;
+        } else {
+          await processPost(browser, postLink, adminDb);
+          processedCount++;
+        }
+      } catch (error) {
+        console.error(`❌ Error processing post: ${postLink.url}`, error);
+        // Continue with next post
       }
     }
 

@@ -10,6 +10,10 @@ import {
   SofiyskaVodaSourceDocument,
 } from "./types";
 import { GeoJSONFeature, GeoJSONFeatureCollection } from "../../types";
+import {
+  isUrlProcessed,
+  saveSourceDocument as saveSourceDocumentShared,
+} from "../shared/firestore";
 
 // Load environment variables to match the rest of the crawlers
 dotenv.config({ path: resolve(process.cwd(), ".env.local") });
@@ -325,30 +329,17 @@ function buildSourceDocument(
   };
 }
 
-function encodeDocumentId(url: string): string {
-  return Buffer.from(url).toString("base64").replaceAll(/[/+=]/g, "_");
-}
-
-async function isUrlProcessed(
-  url: string,
-  adminDb: Firestore
-): Promise<boolean> {
-  const docId = encodeDocumentId(url);
-  const docRef = adminDb.collection("sources").doc(docId);
-  const doc = await docRef.get();
-  return doc.exists;
-}
-
 async function saveSourceDocument(
   doc: SofiyskaVodaSourceDocument,
   adminDb: Firestore
 ): Promise<void> {
-  const docId = encodeDocumentId(doc.url);
-  const docRef = adminDb.collection("sources").doc(docId);
-  await docRef.set({
-    ...doc,
-    geoJson: JSON.stringify(doc.geoJson),
-    crawledAt: new Date(doc.crawledAt),
+  await saveSourceDocumentShared(doc, adminDb, {
+    transformData: (d) => ({
+      ...d,
+      geoJson: JSON.stringify(d.geoJson),
+      crawledAt: new Date(d.crawledAt),
+    }),
+    logSuccess: false,
   });
   console.log(`✅ Записано събитие: ${doc.title}`);
 }

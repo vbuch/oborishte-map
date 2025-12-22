@@ -1,10 +1,7 @@
-export interface SourceDocument {
-  url: string;
-  datePublished: string; // ISO format
-  title: string;
-  message: string; // Markdown format
+import { BaseSourceDocument } from "../shared/types";
+
+export interface SourceDocument extends BaseSourceDocument {
   sourceType: "rayon-oborishte-bg";
-  crawledAt: Date;
 }
 
 export interface PostLink {

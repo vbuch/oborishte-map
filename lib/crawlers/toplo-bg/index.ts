@@ -1,23 +1,20 @@
 #!/usr/bin/env node
-import { chromium } from "playwright";
 import dotenv from "dotenv";
 import { resolve } from "node:path";
+import type { Firestore } from "firebase-admin/firestore";
 import type { FeatureCollection } from "geojson";
 import { parseIncidents } from "./parser";
+import { launchBrowser } from "../shared/browser";
+import { encodeDocumentId, saveSourceDocumentIfNew } from "../shared/firestore";
+import type { SourceDocumentWithGeoJson } from "../shared/types";
 
 dotenv.config({ path: resolve(process.cwd(), ".env.local") });
 
 const SOURCE_TYPE = "toplo-bg";
 const TARGET_URL = "https://toplo.bg/accidents-and-maintenance";
 
-interface SourceDocument {
-  url: string;
-  datePublished: string;
-  title: string;
-  message: string;
+interface SourceDocument extends SourceDocumentWithGeoJson {
   sourceType: typeof SOURCE_TYPE;
-  crawledAt: Date;
-  geoJson: FeatureCollection;
 }
 
 interface CrawlSummary {
@@ -52,39 +49,13 @@ function buildMessage(
   return parts.join("\n");
 }
 
-async function saveSourceDocument(
-  doc: SourceDocument,
-  adminDb: any
-): Promise<boolean> {
-  const docId = Buffer.from(doc.url)
-    .toString("base64")
-    .replaceAll(/[/+=]/g, "_");
-
-  // Check if already exists
-  const existing = await adminDb.collection("sources").doc(docId).get();
-  if (existing.exists) {
-    return false;
-  }
-
-  await adminDb
-    .collection("sources")
-    .doc(docId)
-    .set({
-      ...doc,
-      geoJson: JSON.stringify(doc.geoJson),
-      crawledAt: new Date(doc.crawledAt),
-    });
-
-  return true;
-}
-
 export async function crawl(dryRun = false): Promise<void> {
   const summary: CrawlSummary = { saved: 0, skipped: 0, failed: 0 };
 
   console.log(`🔥 Fetching incidents from ${TARGET_URL}...`);
 
   // Launch browser and fetch HTML
-  const browser = await chromium.launch();
+  const browser = await launchBrowser();
   const page = await browser.newPage();
   await page.goto(TARGET_URL, { waitUntil: "networkidle" });
   const html = await page.content();
@@ -131,7 +102,14 @@ export async function crawl(dryRun = false): Promise<void> {
         console.log(`📝 [dry-run] ${doc.title}`);
         summary.saved++;
       } else if (adminDb) {
-        const saved = await saveSourceDocument(doc, adminDb);
+        const saved = await saveSourceDocumentIfNew(doc, adminDb, {
+          transformData: (d) => ({
+            ...d,
+            geoJson: JSON.stringify(d.geoJson),
+            crawledAt: new Date(d.crawledAt),
+          }),
+          logSuccess: false,
+        });
         if (saved) {
           console.log(`✅ Saved: ${doc.title}`);
           summary.saved++;

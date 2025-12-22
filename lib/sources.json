@@ -13,5 +13,10 @@
     "id": "toplo-bg",
     "url": "https://toplo.bg/",
     "name": "Топлофикация София"
+  },
+  {
+    "id": "sofia-bg",
+    "url": "https://www.sofia.bg/",
+    "name": "Столична община"
   }
 ]

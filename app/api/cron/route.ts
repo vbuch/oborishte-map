@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   };
 
   try {
-    // Step 1: Crawl both sources
+    // Step 1: Crawl all sources
     console.log("\n📡 Step 1: Crawling sources...");
     const crawlResults = await Promise.allSettled([
       (async () => {
@@ -33,6 +33,16 @@ export async function GET(request: Request) {
         const { crawl } = await import("@/lib/crawlers/sofiyska-voda");
         await crawl(false);
         return { source: "sofiyska-voda", success: true };
+      })(),
+      (async () => {
+        const { crawl } = await import("@/lib/crawlers/toplo-bg");
+        await crawl(false);
+        return { source: "toplo-bg", success: true };
+      })(),
+      (async () => {
+        const { crawl } = await import("@/lib/crawlers/sofia-bg");
+        await crawl();
+        return { source: "sofia-bg", success: true };
       })(),
     ]);
 

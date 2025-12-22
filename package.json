@@ -12,6 +12,7 @@
     "crawl:rayon-oborishte": "tsx lib/crawlers/rayon-oborishte-bg/index.ts",
     "crawl:sofiyska-voda": "tsx lib/crawlers/sofiyska-voda/index.ts",
     "crawl:toplo": "tsx lib/crawlers/toplo-bg/index.ts",
+    "crawl:sofia-bg": "tsx lib/crawlers/sofia-bg/index.ts",
     "ingest": "tsx lib/messageIngest/from-sources.ts",
     "notify": "tsx lib/notifications/match-and-notify.ts"
   },
