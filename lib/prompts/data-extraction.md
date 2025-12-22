@@ -92,6 +92,18 @@ Rules:
 3. If start and end locations are the SAME → use `pins`, NOT `streets`.
 4. Do NOT duplicate addresses between `pins` and `streets`.
 
+**Important:** Do NOT extract street sections if the endpoint is a generic term or direction instead of an actual address.
+
+Invalid endpoints to REJECT:
+
+- "маршрута" (the route)
+- "края" (the end)
+- "началото" (the beginning)
+- "посоката" (the direction)
+- Generic directional terms that don't specify an actual location
+
+If the endpoint is not a specific street name, street number, or intersection, DO NOT create a `streets` entry.
+
 Street logic:
 
 - Text: "бул. A от кръстовището с ул. X до това с бул. Y"
@@ -101,9 +113,14 @@ Street logic:
   - `to`: "bul. A, Sofia, Bulgaria & bul. Y, Sofia, Bulgaria"
 
 - Text: "Street A between Street X and Street Y"
+
   - `street`: "Street A, Sofia, Bulgaria"
   - `from`: "Street A, Sofia, Bulgaria & Street X, Sofia, Bulgaria"
   - `to`: "Street A, Sofia, Bulgaria & Street Y, Sofia, Bulgaria"
+
+- Text: "бул. 'Васил Левски' от бул. 'Княз Александър Дондуков' до маршрута"
+  - **INVALID** - "маршрута" is not a specific location
+  - Do NOT extract this as a street section
 
 Address-number logic:
 
