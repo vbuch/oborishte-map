@@ -103,7 +103,12 @@ export default function MessageDetailView({
             </p>
           </div>
 
-          {message.source && <SourceDisplay sourceId={message.source} />}
+          {message.source && (
+            <SourceDisplay
+              sourceId={message.source}
+              sourceUrl={message.sourceUrl}
+            />
+          )}
 
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-1">Текст</h3>
