@@ -30,6 +30,11 @@ export interface MessageIngestOptions {
    * Optional source URL for the message (e.g., original article URL)
    */
   sourceUrl?: string;
+  /**
+   * Optional boundary filtering - if provided, only features within boundaries are kept
+   * If no features are within boundaries, the message is not stored
+   */
+  boundaryFilter?: GeoJSONFeatureCollection;
 }
 
 /**
@@ -89,6 +94,27 @@ export async function messageIngest(
       extractedData,
       preGeocodedMap
     );
+  }
+
+  // Step 6.5: Apply boundary filtering if provided
+  if (options.boundaryFilter && geoJson) {
+    const { filterFeaturesByBoundaries } = await import("../boundary-utils");
+    const filteredGeoJson = filterFeaturesByBoundaries(
+      geoJson,
+      options.boundaryFilter
+    );
+
+    if (!filteredGeoJson) {
+      // No features within boundaries, don't store the message
+      console.log(
+        `⏭️  Message ${messageId} has no features within boundaries, skipping storage`
+      );
+      // Note: The message document already exists in Firestore from storeIncomingMessage
+      // We could delete it here, but leaving it allows for auditing
+      throw new Error("No features within specified boundaries");
+    }
+
+    geoJson = filteredGeoJson;
   }
 
   // Step 7: Store GeoJSON in message (either generated or provided)

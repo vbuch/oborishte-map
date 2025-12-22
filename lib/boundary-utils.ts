@@ -138,6 +138,42 @@ export function checkFeatureIntersection(
 }
 
 /**
+ * Filter GeoJSON features to only include those within boundaries
+ * Returns a new FeatureCollection with only features that intersect the boundaries
+ * Returns null if no features are within boundaries
+ */
+export function filterFeaturesByBoundaries(
+  sourceGeoJson: GeoJSONFeatureCollection | null,
+  boundaries: GeoJSONFeatureCollection
+): GeoJSONFeatureCollection | null {
+  if (
+    !sourceGeoJson ||
+    !sourceGeoJson.features ||
+    sourceGeoJson.features.length === 0
+  ) {
+    return null;
+  }
+
+  const filteredFeatures = sourceGeoJson.features.filter((feature) => {
+    if (!feature.geometry?.coordinates) {
+      console.warn("⚠️  Skipping feature without valid geometry");
+      return false;
+    }
+
+    return checkFeatureIntersection(feature, boundaries);
+  });
+
+  if (filteredFeatures.length === 0) {
+    return null;
+  }
+
+  return {
+    type: "FeatureCollection",
+    features: filteredFeatures,
+  };
+}
+
+/**
  * Check if a GeoJSON FeatureCollection is within boundaries
  */
 export function isWithinBoundaries(

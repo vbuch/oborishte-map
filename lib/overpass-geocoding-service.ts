@@ -1,12 +1,17 @@
 import { Address } from "./types";
 import * as turf from "@turf/turf";
 import type { Feature, MultiLineString, Position } from "geojson";
+import {
+  SOFIA_BOUNDS,
+  SOFIA_CENTER,
+  SOFIA_BBOX,
+  isWithinSofia,
+} from "./geocoding-utils";
+import { delay } from "./delay";
 
 // Constants for API rate limiting
 const OVERPASS_DELAY_MS = 500; // 500ms for Overpass API (generous limits)
 const BUFFER_DISTANCE_METERS = 30; // Buffer distance for street geometries
-const SOFIA_BBOX = "42.65,23.25,42.75,23.45"; // south,west,north,east
-const SOFIA_CENTER = { lat: 42.6977, lng: 23.3219 }; // Sofia city center as reference
 
 // Multiple Overpass API instances for fallback
 const OVERPASS_INSTANCES = [
@@ -323,7 +328,7 @@ export async function overpassGeocodeIntersections(
 
     // Rate limiting between requests
     if (i < intersections.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, OVERPASS_DELAY_MS));
+      await delay(OVERPASS_DELAY_MS);
     }
   }
 
@@ -515,9 +520,12 @@ async function geocodeAddressWithNominatim(
         ? address
         : `${address}, София, България`;
 
+    // Add bounded search to Sofia area and increase limit to filter results
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
       fullAddress
-    )}&format=json&limit=1&addressdetails=1`;
+    )}&format=json&limit=5&addressdetails=1&bounded=1&viewbox=${
+      SOFIA_BOUNDS.west
+    },${SOFIA_BOUNDS.south},${SOFIA_BOUNDS.east},${SOFIA_BOUNDS.north}`;
 
     const response = await fetch(url, {
       headers: {
@@ -533,16 +541,30 @@ async function geocodeAddressWithNominatim(
     const data = await response.json();
 
     if (data && data.length > 0) {
-      const result = data[0];
-      const coords = {
-        lat: Number.parseFloat(result.lat),
-        lng: Number.parseFloat(result.lon),
-      };
+      // Find first result that is actually within Sofia boundaries
+      for (const result of data) {
+        const coords = {
+          lat: Number.parseFloat(result.lat),
+          lng: Number.parseFloat(result.lon),
+        };
 
-      console.log(
-        `   ✅ Nominatim geocoded: "${address}" → [${coords.lat}, ${coords.lng}]`
+        // Validate coordinates are within Sofia
+        if (isWithinSofia(coords.lat, coords.lng)) {
+          console.log(
+            `   ✅ Nominatim geocoded: "${address}" → [${coords.lat}, ${coords.lng}]`
+          );
+          return coords;
+        } else {
+          console.warn(
+            `   ⚠️  Nominatim result for "${address}" outside Sofia: [${coords.lat}, ${coords.lng}]`
+          );
+        }
+      }
+
+      console.warn(
+        `   ❌ All Nominatim results for "${address}" are outside Sofia`
       );
-      return coords;
+      return null;
     }
 
     console.warn(`   ❌ Nominatim found no results for: "${address}"`);
@@ -608,7 +630,7 @@ export async function overpassGeocodeAddresses(
 
     // Rate limiting
     if (i < addresses.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, OVERPASS_DELAY_MS));
+      await delay(OVERPASS_DELAY_MS);
     }
   }
 

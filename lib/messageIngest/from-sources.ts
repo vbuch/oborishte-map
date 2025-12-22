@@ -113,7 +113,8 @@ async function isAlreadyIngested(
 async function ingestSource(
   source: SourceDocument,
   adminDb: Firestore,
-  dryRun: boolean
+  dryRun: boolean,
+  boundaries: GeoJSONFeatureCollection | null
 ): Promise<boolean> {
   if (dryRun) {
     console.log(`   📝 [dry-run] Would ingest: ${source.title}`);
@@ -149,6 +150,7 @@ async function ingestSource(
     {
       precomputedGeoJson: geoJson,
       sourceUrl: source.url,
+      boundaryFilter: boundaries ?? undefined,
     }
   );
 
@@ -211,6 +213,11 @@ export async function ingest(
   const adminDb = await maybeInitFirestore();
 
   const allSources = await fetchSources(adminDb, options);
+
+  // Note: For sources WITH precomputed geoJson (toplo-bg, sofiyska-voda),
+  // we still do the boundary filtering here at the source level
+  // For sources WITHOUT geoJson (rayon-oborishte-bg, sofia-bg),
+  // filtering will happen during messageIngest after geocoding
   const { withinBounds, outsideBounds } = await filterByBoundaries(
     allSources,
     boundaries
@@ -233,7 +240,8 @@ export async function ingest(
       const wasIngested = await ingestSource(
         source,
         adminDb,
-        options.dryRun ?? false
+        options.dryRun ?? false,
+        boundaries
       );
       if (wasIngested) {
         summary.ingested++;
@@ -244,8 +252,16 @@ export async function ingest(
       summary.failed++;
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      summary.errors.push({ url: source.url, error: errorMessage });
-      console.error(`   ❌ Failed to ingest ${source.title}:`, errorMessage);
+
+      // Don't log as error if it's just outside boundaries
+      if (errorMessage.includes("No features within specified boundaries")) {
+        console.log(
+          `   ⏭️  ${source.title}: Outside boundaries after geocoding`
+        );
+      } else {
+        summary.errors.push({ url: source.url, error: errorMessage });
+        console.error(`   ❌ Failed to ingest ${source.title}:`, errorMessage);
+      }
     }
   }
 
