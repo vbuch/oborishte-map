@@ -24,11 +24,11 @@ console.log(`📍 Pin Geocoding: ${PIN_GEOCODING_ALGO}`);
 export function getDataExtractionPromptPath(): string {
   // Use street geocoding algo for prompt selection (affects intersection format)
   switch (STREET_GEOCODING_ALGO) {
-    case "google_geocoding":
-      return "lib/prompts/data-extraction.md";
     case "overpass":
-      return "lib/prompts/data-extraction-overpass.md";
+      return "prompts/data-extraction-overpass.md";
+
+    case "google_geocoding":
     default:
-      return "lib/prompts/data-extraction.md";
+      return "prompts/data-extraction.md";
   }
 }

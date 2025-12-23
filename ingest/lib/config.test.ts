@@ -37,14 +37,14 @@ describe("config", () => {
     it("should return overpass prompt path when using overpass", () => {
       // Since STREET_GEOCODING_ALGO is 'overpass' in current config
       const path = getDataExtractionPromptPath();
-      expect(path).toBe("lib/prompts/data-extraction-overpass.md");
+      expect(path).toBe("prompts/data-extraction-overpass.md");
     });
 
     it("should handle different algorithm configurations", () => {
       // This tests the function logic even though we can't change the const
       // We're verifying the switch statement works correctly
       const path = getDataExtractionPromptPath();
-      expect(path).toMatch(/^lib\/prompts\/data-extraction.*\.md$/);
+      expect(path).toBe("prompts/data-extraction-overpass.md");
       expect(path).toBeTruthy();
     });
   });
