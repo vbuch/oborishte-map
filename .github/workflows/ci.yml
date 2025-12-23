@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    name: Run Tests
+  test-ingest:
+    name: Test Ingest
     runs-on: ubuntu-latest
 
     strategy:
@@ -24,9 +24,39 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
+          cache-dependency-path: ingest/package-lock.json
 
       - name: Install dependencies
+        working-directory: ./ingest
         run: npm ci
 
       - name: Run unit tests
+        working-directory: ./ingest
+        run: npm run test:run
+
+  test-web:
+    name: Test Web
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Run unit tests
+        working-directory: ./web
         run: npm run test:run

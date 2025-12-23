@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "test": "vitest",
+    "test:run": "vitest run",
     "crawl": "tsx crawl",
     "ingest": "tsx ingest",
     "notify": "tsx notify"
