@@ -1,6 +1,6 @@
 # Ingest Pipeline
 
-Data collection and processing pipeline for OboApp. Collects infrastructure disruption notices from public sources (water, heating, road repairs), processes them into geocoded GeoJSON, and delivers notifications to interested users.
+Data collection and processing pipeline for OboApp. Collects infrastructure disruption notices from public sources (water, heating, road repairs) across Sofia, processes them into geocoded GeoJSON, and delivers notifications to interested users.
 
 ## Pipeline Overview
 
@@ -30,8 +30,8 @@ graph LR
 # Run a specific crawler
 npm run crawl -- --source rayon-oborishte-bg
 
-# Process sources into messages (with Oborishte boundaries filter)
-npm run ingest -- --boundaries messageIngest/boundaries/oborishte.geojson
+# Process all sources into messages
+npm run ingest
 
 # Send notifications for new messages
 npm run notify

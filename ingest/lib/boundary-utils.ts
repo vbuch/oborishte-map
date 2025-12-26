@@ -6,7 +6,8 @@ import type { GeoJSONFeatureCollection } from "./types";
 let cachedBoundary: GeoJSONFeatureCollection | null = null;
 
 /**
- * Load boundaries from a GeoJSON file
+ * Load optional geographic boundaries from a GeoJSON file for filtering.
+ * If no path is provided, all sources will be processed.
  */
 export function loadBoundaries(
   boundariesPath?: string
@@ -32,23 +33,6 @@ export function loadBoundaries(
     );
     throw error;
   }
-}
-
-/**
- * Load the Oborishte boundary from the default location (with caching)
- */
-export function loadOborichteBoundary(): GeoJSONFeatureCollection {
-  if (cachedBoundary) {
-    return cachedBoundary;
-  }
-
-  const boundaryPath = resolve(
-    process.cwd(),
-    "lib/messageIngest/boundaries/oborishte.geojson"
-  );
-  const boundaryContent = readFileSync(boundaryPath, "utf-8");
-  cachedBoundary = JSON.parse(boundaryContent) as GeoJSONFeatureCollection;
-  return cachedBoundary;
 }
 
 /**

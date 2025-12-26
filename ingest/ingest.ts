@@ -21,7 +21,7 @@ program
   )
   .option(
     "--boundaries <path>",
-    "Path to GeoJSON boundaries file for filtering"
+    "Optional: Path to GeoJSON boundaries file for additional geographic filtering"
   )
   .option("--limit <number>", "Limit number of sources to process", parseInt)
   .addHelpText(
