@@ -7,7 +7,7 @@
 export const SOFIA_BOUNDS = {
   south: 42.605,
   west: 23.188,
-  north: 42.788,
+  north: 42.83,
   east: 23.528,
 };
 

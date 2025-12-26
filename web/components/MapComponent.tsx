@@ -31,17 +31,25 @@ interface MapComponentProps {
 }
 
 // Oborishte District center coordinates
-const OBORISHTE_CENTER = {
-  lat: 42.6977,
-  lng: 23.3341,
-};
+// const OBORISHTE_CENTER = {
+//   lat: 42.6977,
+//   lng: 23.3341,
+// };
+const SOFIA_CENTER = { lat: 42.6977, lng: 23.3219 };
 
 // Bounds to restrict map panning
-const OBORISHTE_BOUNDS = {
-  north: 42.72,
-  south: 42.67,
-  east: 23.37,
-  west: 23.31,
+// const OBORISHTE_BOUNDS = {
+//   north: 42.72,
+//   south: 42.67,
+//   east: 23.37,
+//   west: 23.31,
+// };
+const SOFIA_BOUNDS = {
+  // Also in ingest/lib/geocoding-utils.ts
+  south: 42.605,
+  west: 23.188,
+  north: 42.83,
+  east: 23.528,
 };
 
 const mapContainerStyle = {
@@ -92,14 +100,14 @@ const mapStyles = [
 
 const mapOptions = {
   zoom: 14,
-  center: OBORISHTE_CENTER,
+  center: SOFIA_CENTER,
   mapTypeControl: false,
   streetViewControl: false,
   fullscreenControl: false,
   styles: mapStyles,
   clickableIcons: false, // Disable clicking on POIs (shops, hospitals, etc.)
   restriction: {
-    latLngBounds: OBORISHTE_BOUNDS,
+    latLngBounds: SOFIA_BOUNDS,
     strictBounds: true,
   },
   minZoom: 12,
@@ -115,7 +123,7 @@ export default function MapComponent({
   targetMode,
 }: MapComponentProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
-  const latestCenterRef = useRef(OBORISHTE_CENTER);
+  const latestCenterRef = useRef(SOFIA_CENTER);
 
   const centerMap = useCallback(
     (
