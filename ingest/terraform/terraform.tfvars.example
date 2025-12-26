@@ -5,6 +5,9 @@ project_id         = "your-project-id"
 firebase_project_id = "your-firebase-project-id"  # Often same as project_id
 region             = "europe-west1"
 
+# App URL for notifications and links (hardcoded in main.tf as https://oboapp.online)
+# This is configured as NEXT_PUBLIC_APP_URL environment variable in Cloud Run jobs
+
 # Optional overrides
 # image_tag = "v1.0.0"
 # schedule_timezone = "UTC"

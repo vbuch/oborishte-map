@@ -15,6 +15,14 @@ import {
 // Load environment variables
 dotenv.config({ path: resolve(process.cwd(), ".env.local") });
 
+// App URL (required)
+if (!process.env.NEXT_PUBLIC_APP_URL) {
+  throw new Error(
+    "Environment variable NEXT_PUBLIC_APP_URL must be set (e.g. https://oboapp.online)"
+  );
+}
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+
 interface MatchResult {
   messageId: string;
   userId: string;
@@ -367,22 +375,17 @@ async function sendPushNotification(
       notification: {
         title: "Ново съобщение в Оборище",
         body: `${messagePreview}${distanceText}`,
-        imageUrl: "/icon-192x192.png",
+        imageUrl: `${APP_URL}/icon-192x192.png`,
       },
       data: {
         messageId: match.messageId,
         interestId: match.interestId,
         matchId: match.id || "",
-        url: `${
-          process.env.NEXT_PUBLIC_APP_URL || "https://oborishte-map.vercel.app"
-        }/?messageId=${match.messageId}`,
+        url: `${APP_URL}/?messageId=${match.messageId}`,
       },
       webpush: {
         fcmOptions: {
-          link: `${
-            process.env.NEXT_PUBLIC_APP_URL ||
-            "https://oborishte-map.vercel.app"
-          }/?messageId=${match.messageId}`,
+          link: `${APP_URL}/?messageId=${match.messageId}`,
         },
       },
     });
