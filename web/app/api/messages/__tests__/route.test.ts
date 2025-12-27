@@ -60,6 +60,20 @@ describe("GET /api/messages - Date Filtering", () => {
 
   it("should filter out messages with all timespans expired", async () => {
     // Create mock data - one message with expired timespans, one with current
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Format dates as DD.MM.YYYY HH:MM
+    const formatDate = (date: Date) => {
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}.${month}.${year} 08:00`;
+    };
+
     const mockMessages = [
       {
         id: "msg1",
@@ -91,14 +105,17 @@ describe("GET /api/messages - Date Filtering", () => {
               {
                 address: "ул. Тест 2",
                 timespans: [
-                  { start: "19.12.2025 08:00", end: "20.12.2025 18:00" },
+                  {
+                    start: formatDate(yesterday),
+                    end: formatDate(tomorrow),
+                  },
                 ],
               },
             ],
             streets: [],
           }),
           geoJson: JSON.stringify(createMockGeoJson()),
-          createdAt: { _seconds: new Date("2025-12-19").getTime() / 1000 },
+          createdAt: { _seconds: yesterday.getTime() / 1000 },
         }),
       },
     ];

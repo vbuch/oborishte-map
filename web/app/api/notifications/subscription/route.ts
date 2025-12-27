@@ -2,17 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { NotificationSubscription } from "@/lib/types";
 import { verifyAuthToken } from "@/lib/verifyAuthToken";
-
-// Helper to convert Firestore timestamp to ISO string
-function convertTimestamp(timestamp: any): string {
-  if (timestamp?._seconds) {
-    return new Date(timestamp._seconds * 1000).toISOString();
-  }
-  if (timestamp?.toDate) {
-    return timestamp.toDate().toISOString();
-  }
-  return timestamp || new Date().toISOString();
-}
+import { convertTimestamp } from "@/lib/firestore-utils";
 
 // GET - Check if user has a valid subscription
 export async function GET(request: NextRequest) {
@@ -120,23 +110,41 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE - Remove notification subscription
+// DELETE - Remove a specific notification subscription by token
 export async function DELETE(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
     const { userId } = await verifyAuthToken(authHeader);
 
+    // Get token from query parameters
+    const { searchParams } = new URL(request.url);
+    const token = searchParams.get("token");
+
+    if (!token) {
+      return NextResponse.json(
+        { error: "Token parameter is required" },
+        { status: 400 }
+      );
+    }
+
     const subscriptionsRef = adminDb.collection("notificationSubscriptions");
-    const snapshot = await subscriptionsRef.where("userId", "==", userId).get();
+    const snapshot = await subscriptionsRef
+      .where("userId", "==", userId)
+      .where("token", "==", token)
+      .limit(1)
+      .get();
 
-    // Delete all subscriptions for this user
-    const batch = adminDb.batch();
-    snapshot.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    await batch.commit();
+    if (snapshot.empty) {
+      return NextResponse.json(
+        { error: "Subscription not found" },
+        { status: 404 }
+      );
+    }
 
-    return NextResponse.json({ success: true, deleted: snapshot.size });
+    // Delete the subscription
+    await snapshot.docs[0].ref.delete();
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting subscription:", error);
     return NextResponse.json(

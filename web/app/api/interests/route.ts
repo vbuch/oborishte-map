@@ -2,22 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { Interest } from "@/lib/types";
 import { verifyAuthToken } from "@/lib/verifyAuthToken";
+import { convertTimestamp } from "@/lib/firestore-utils";
 
 // Constants
 const MIN_RADIUS = 100; // meters
 const MAX_RADIUS = 1000; // meters
 const DEFAULT_RADIUS = 500; // meters
-
-// Helper to convert Firestore timestamp to ISO string
-function convertTimestamp(timestamp: any): string {
-  if (timestamp?._seconds) {
-    return new Date(timestamp._seconds * 1000).toISOString();
-  }
-  if (timestamp?.toDate) {
-    return timestamp.toDate().toISOString();
-  }
-  return timestamp || new Date().toISOString();
-}
 
 // Helper to validate radius
 function validateRadius(radius: number): number {

@@ -49,15 +49,64 @@ export function getNotificationPermission(): NotificationPermission {
   return Notification.permission;
 }
 
+/** * Track that user explicitly unsubscribed (to prevent auto-resubscription)
+ */
+function markExplicitUnsubscribe(userId: string): void {
+  if (typeof globalThis.localStorage !== "undefined") {
+    globalThis.localStorage.setItem(
+      `notif_unsubscribed_${userId}`,
+      Date.now().toString()
+    );
+  }
+}
+
+/**
+ * Check if user explicitly unsubscribed recently (within 30 days)
+ */
+function hasExplicitlyUnsubscribed(userId: string): boolean {
+  if (typeof globalThis.localStorage === "undefined") {
+    return false;
+  }
+
+  const unsubscribedAt = globalThis.localStorage.getItem(
+    `notif_unsubscribed_${userId}`
+  );
+  if (!unsubscribedAt) {
+    return false;
+  }
+
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+  const elapsed = Date.now() - Number.parseInt(unsubscribedAt, 10);
+  return elapsed < thirtyDaysMs;
+}
+
+/**
+ * Clear explicit unsubscribe flag (when user manually subscribes again)
+ */
+function clearExplicitUnsubscribe(userId: string): void {
+  if (typeof globalThis.localStorage !== "undefined") {
+    globalThis.localStorage.removeItem(`notif_unsubscribed_${userId}`);
+  }
+}
+
+/**
+ * Export markExplicitUnsubscribe for use in settings page
+ */
+export { markExplicitUnsubscribe };
+
 /**
  * Check if user has a valid subscription
  */
-export async function hasValidSubscription(userId: string): Promise<boolean> {
+export async function hasValidSubscription(
+  userId: string,
+  idToken: string
+): Promise<boolean> {
   try {
     const response = await fetch("/api/notifications/subscription", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
       },
     });
 
@@ -102,6 +151,9 @@ export async function subscribeToPushNotifications(
       console.warn("No registration token available");
       return null;
     }
+
+    // Clear explicit unsubscribe flag since user is subscribing
+    clearExplicitUnsubscribe(userId);
 
     // Save subscription to backend
     const response = await fetch("/api/notifications/subscription", {
@@ -159,7 +211,12 @@ export async function ensureNotificationPermission(
 
   // If permission already granted, ensure subscription is valid
   if (currentPermission === "granted") {
-    const hasSubscription = await hasValidSubscription(userId);
+    // Don't auto-resubscribe if user explicitly unsubscribed
+    if (hasExplicitlyUnsubscribed(userId)) {
+      return;
+    }
+
+    const hasSubscription = await hasValidSubscription(userId, idToken);
     if (!hasSubscription) {
       await subscribeToPushNotifications(userId, idToken);
     }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { trackEvent } from "@/lib/analytics";
 
@@ -80,16 +81,17 @@ export default function UserMenu({ isOpen, onClose }: UserMenuProps) {
 
         {/* Menu Items */}
         <div className="py-2">
-          {/* Placeholder for future Settings link
-          <button
-            disabled
-            className="w-full px-6 py-3 text-left text-sm text-gray-400 cursor-not-allowed"
+          {/* Settings Link */}
+          <Link
+            href="/settings"
+            onClick={onClose}
+            className="block w-full px-6 py-3 text-left text-sm hover:bg-gray-50 transition-colors"
           >
-            Настройки (скоро)
-          </button>
+            Настройки
+          </Link>
 
           {/* Divider */}
-          {/* <hr className="my-2 border-gray-200" /> */}
+          <hr className="my-2 border-gray-200" />
 
           {/* Sign Out */}
           <button

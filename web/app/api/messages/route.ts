@@ -1,21 +1,10 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { Message, Timespan } from "@/lib/types";
+import { convertTimestamp } from "@/lib/firestore-utils";
 
 const INGEST_SOURCE = "web-interface";
 const DEFAULT_RELEVANCE_DAYS = 7;
-
-function convertTimestamp(timestamp: any): string {
-  // Handle Firestore Timestamp from Admin SDK
-  if (timestamp?._seconds) {
-    return new Date(timestamp._seconds * 1000).toISOString();
-  }
-  // Handle Firestore Timestamp from client SDK
-  if (timestamp?.toDate) {
-    return timestamp.toDate().toISOString();
-  }
-  return timestamp || new Date().toISOString();
-}
 
 /**
  * Parse a timespan end date string in format "DD.MM.YYYY HH:MM" to Date object

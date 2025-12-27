@@ -28,6 +28,7 @@ interface MapComponentProps {
     onSave: (coordinates: { lat: number; lng: number }, radius: number) => void;
     onCancel: () => void;
   };
+  readonly initialCenter?: { lat: number; lng: number };
 }
 
 // Oborishte District center coordinates
@@ -90,22 +91,6 @@ const mapStyles = [
   },
 ];
 
-const mapOptions = {
-  zoom: 14,
-  center: OBORISHTE_CENTER,
-  mapTypeControl: false,
-  streetViewControl: false,
-  fullscreenControl: false,
-  styles: mapStyles,
-  clickableIcons: false, // Disable clicking on POIs (shops, hospitals, etc.)
-  restriction: {
-    latLngBounds: OBORISHTE_BOUNDS,
-    strictBounds: true,
-  },
-  minZoom: 12,
-  maxZoom: 18,
-};
-
 export default function MapComponent({
   messages,
   onFeatureClick,
@@ -113,9 +98,29 @@ export default function MapComponent({
   interests = [],
   onInterestClick,
   targetMode,
+  initialCenter,
 }: MapComponentProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
   const latestCenterRef = useRef(OBORISHTE_CENTER);
+
+  const mapOptions: google.maps.MapOptions = useMemo(
+    () => ({
+      zoom: 14,
+      center: initialCenter || OBORISHTE_CENTER,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+      styles: mapStyles,
+      clickableIcons: false, // Disable clicking on POIs (shops, hospitals, etc.)
+      restriction: {
+        latLngBounds: OBORISHTE_BOUNDS,
+        strictBounds: true,
+      },
+      minZoom: 12,
+      maxZoom: 18,
+    }),
+    [initialCenter]
+  );
 
   const centerMap = useCallback(
     (

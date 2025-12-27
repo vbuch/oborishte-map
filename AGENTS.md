@@ -422,6 +422,126 @@ Reference implementations:
 
 When working on the codebase, if you identify a general project pattern or preference, see [Developer Preference Enforcement](#developer-preference-enforcement) for guidance on suggesting automation and documentation updates.
 
+### DRY Principle: Shared Utilities
+
+**This project follows DRY (Don't Repeat Yourself) very strictly.** Before implementing helper functions in API routes or components, check if a shared utility already exists or should be created.
+
+**Common shared utilities locations:**
+
+- **`web/lib/`** - Shared utilities for web/Next.js code
+- **`ingest/lib/`** - Shared utilities for crawlers and ingestion scripts
+
+**How to detect duplication:**
+
+```bash
+# Search for duplicate function signatures
+grep -r "function convertTimestamp" web/app/api/**/*.ts
+grep -r "function validateGeoJSON" ingest/crawlers/**/*.ts
+```
+
+**✅ CORRECT - Create shared utility:**
+
+```typescript
+// web/lib/firestore-utils.ts
+export function convertTimestamp(timestamp: any): string {
+  if (timestamp?._seconds) {
+    return new Date(timestamp._seconds * 1000).toISOString();
+  }
+  if (timestamp?.toDate) {
+    return timestamp.toDate().toISOString();
+  }
+  return timestamp || new Date().toISOString();
+}
+```
+
+```typescript
+// web/app/api/messages/route.ts
+import { convertTimestamp } from "@/lib/firestore-utils";
+
+const message = {
+  createdAt: convertTimestamp(data.createdAt),
+};
+```
+
+**❌ WRONG - Duplicate helpers in each file:**
+
+```typescript
+// Copied in messages/route.ts, interests/route.ts, etc.
+function convertTimestamp(timestamp: any): string {
+  // Same implementation copied 4+ times
+}
+```
+
+**When creating new shared utilities:**
+
+1. Check if similar functionality exists (use `grep_search` or `semantic_search`)
+2. Create in appropriate `lib/` directory with descriptive name
+3. Export named functions (prefer named exports over default)
+4. Update all duplicate usages across the codebase
+5. Propose AGENTS.md update if it establishes a new pattern
+
+### Component Composition
+
+**Break large components into smaller, focused components.** This improves readability, testability, and reusability.
+
+**Component organization:**
+
+- **Collocated components:** Keep component files next to the page/parent that uses them
+- **Shared components:** Move to `web/components/` if used across multiple pages
+- **File naming:** Use PascalCase for component files (e.g., `NotificationsSection.tsx`)
+
+**✅ CORRECT - Small, focused components:**
+
+```tsx
+// web/app/settings/page.tsx
+import NotificationsSection from "./NotificationsSection";
+import ZonesSection from "./ZonesSection";
+import DeleteAccountSection from "./DeleteAccountSection";
+
+export default function SettingsPage() {
+  // State and handlers
+  return (
+    <div>
+      <NotificationsSection {...props} />
+      <ZonesSection {...props} />
+      <DeleteAccountSection {...props} />
+    </div>
+  );
+}
+```
+
+```tsx
+// web/app/settings/NotificationsSection.tsx
+export default function NotificationsSection({
+  subscriptions,
+  onSubscribe,
+}: NotificationsSectionProps) {
+  // Single responsibility: manage notification subscriptions
+  return <section>{/* ... */}</section>;
+}
+```
+
+**❌ WRONG - Monolithic component:**
+
+```tsx
+// web/app/settings/page.tsx
+export default function SettingsPage() {
+  // 500+ lines of JSX for notifications, zones, and account deletion
+  return (
+    <div>
+      {/* All sections inline, making the component hard to read and maintain */}
+    </div>
+  );
+}
+```
+
+**Guidelines:**
+
+- **Single responsibility:** Each component should do one thing well
+- **Reasonable size:** Keep components under ~150 lines when possible
+- **Props over drilling:** Pass callbacks and data as props, avoid prop drilling beyond 2 levels
+- **Readonly props:** Mark all props interfaces as readonly
+
 ### Script Template
 
 ```typescript

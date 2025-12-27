@@ -3,12 +3,11 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
-import MapComponent from "@/components/MapComponent";
+import MapContainer from "@/components/MapContainer";
 import MessageDetailView from "@/components/MessageDetailView";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import LoginPrompt from "@/components/LoginPrompt";
-import AddInterestButton from "@/components/AddInterestButton";
-import AddInterestsPrompt from "@/components/AddInterestsPrompt";
+import SubscribePrompt from "@/components/SubscribePrompt";
 import MessagesGrid from "@/components/MessagesGrid";
 import { Message, Interest } from "@/lib/types";
 import { useInterests } from "@/lib/hooks/useInterests";
@@ -20,6 +19,10 @@ export default function HomeContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [initialMapCenter, setInitialMapCenter] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [centerMapFn, setCenterMapFn] = useState<
     | ((
         lat: number,
@@ -51,9 +54,38 @@ export default function HomeContent() {
   const { showPrompt, onAccept, onDecline, checkAndPromptForNotifications } =
     useNotificationPrompt();
 
+  // Subscribe prompt state
+  const [showSubscribePrompt, setShowSubscribePrompt] = useState(false);
+  const [hasCheckedSubscriptions, setHasCheckedSubscriptions] = useState(false);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Handle URL-based map centering (from settings page zone clicks)
+  useEffect(() => {
+    const lat = searchParams.get("lat");
+    const lng = searchParams.get("lng");
+
+    if (lat && lng) {
+      const latitude = Number.parseFloat(lat);
+      const longitude = Number.parseFloat(lng);
+
+      if (!Number.isNaN(latitude) && !Number.isNaN(longitude)) {
+        setInitialMapCenter({ lat: latitude, lng: longitude });
+
+        // Clear query params after setting initial center
+        globalThis.history.replaceState({}, "", "/");
+      }
+    }
+  }, [searchParams]);
+
+  // Center map when initialMapCenter is set (from URL params)
+  useEffect(() => {
+    if (initialMapCenter && centerMapFn) {
+      centerMapFn(initialMapCenter.lat, initialMapCenter.lng, 16);
+    }
+  }, [initialMapCenter, centerMapFn]);
 
   // Check for notification permission when user has circles
   useEffect(() => {
@@ -68,6 +100,36 @@ export default function HomeContent() {
         });
     }
   }, [user, interests.length, checkAndPromptForNotifications]);
+
+  // Check if user has zones but no subscriptions
+  useEffect(() => {
+    if (!user || interests.length === 0 || hasCheckedSubscriptions) {
+      return;
+    }
+
+    const checkSubscriptions = async () => {
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch("/api/notifications/subscription/all", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const subscriptions = await response.json();
+          if (Array.isArray(subscriptions) && subscriptions.length === 0) {
+            // User has zones but no subscriptions - show prompt
+            setShowSubscribePrompt(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking subscriptions:", error);
+      } finally {
+        setHasCheckedSubscriptions(true);
+      }
+    };
+
+    checkSubscriptions();
+  }, [user, interests.length, hasCheckedSubscriptions]);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -324,40 +386,19 @@ export default function HomeContent() {
             <p className="text-gray-600">Зареждане на картата...</p>
           </div>
         ) : (
-          <>
-            <MapComponent
-              messages={messages}
-              onFeatureClick={handleFeatureClick}
-              onMapReady={handleMapReady}
-              interests={interests}
-              onInterestClick={handleInterestClick}
-              targetMode={
-                targetMode.active
-                  ? {
-                      active: true,
-                      initialRadius: targetMode.initialRadius,
-                      editingInterestId: targetMode.editingInterestId,
-                      onSave: handleSaveInterest,
-                      onCancel: handleCancelTargetMode,
-                    }
-                  : undefined
-              }
-            />
-
-            {/* Add interests prompt - shown when user is logged in but has no interests */}
-            {user && interests.length === 0 && (
-              <AddInterestsPrompt onAddInterests={handleStartAddInterest} />
-            )}
-
-            {/* Add interests button - shown when user is logged in and has interests */}
-            {user && interests.length > 0 && (
-              <AddInterestButton
-                onClick={handleStartAddInterest}
-                isUserAuthenticated={!!user}
-                visible={!targetMode.active}
-              />
-            )}
-          </>
+          <MapContainer
+            messages={messages}
+            interests={interests}
+            user={user}
+            targetMode={targetMode}
+            initialMapCenter={initialMapCenter}
+            onFeatureClick={handleFeatureClick}
+            onMapReady={handleMapReady}
+            onInterestClick={handleInterestClick}
+            onSaveInterest={handleSaveInterest}
+            onCancelTargetMode={handleCancelTargetMode}
+            onStartAddInterest={handleStartAddInterest}
+          />
         )}
       </div>
 
@@ -442,6 +483,11 @@ export default function HomeContent() {
           onDecline={onDecline}
           zonesCount={interests.length}
         />
+      )}
+
+      {/* Subscribe prompt - shown when user has zones but no subscriptions */}
+      {showSubscribePrompt && (
+        <SubscribePrompt onClose={() => setShowSubscribePrompt(false)} />
       )}
 
       {/* Login prompt for non-authenticated users */}
