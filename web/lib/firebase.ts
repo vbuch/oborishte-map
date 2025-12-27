@@ -15,13 +15,15 @@ let app: FirebaseApp;
 let db: Firestore;
 let auth: Auth;
 
+const databaseId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID;
+
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
+  db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
   auth = getAuth(app);
 } else {
   app = getApps()[0];
-  db = getFirestore(app);
+  db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
   auth = getAuth(app);
 }
 

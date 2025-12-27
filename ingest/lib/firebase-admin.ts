@@ -6,6 +6,8 @@ let adminApp: App;
 let adminDb: Firestore;
 let adminAuth: Auth;
 
+const databaseId = process.env.FIREBASE_DATABASE_ID;
+
 // Initialize Firebase Admin SDK
 if (!getApps().length) {
   // For production, use service account key from environment
@@ -35,11 +37,15 @@ if (!getApps().length) {
     );
   }
 
-  adminDb = getFirestore(adminApp);
+  adminDb = databaseId
+    ? getFirestore(adminApp, databaseId)
+    : getFirestore(adminApp);
   adminAuth = getAuth(adminApp);
 } else {
   adminApp = getApps()[0];
-  adminDb = getFirestore(adminApp);
+  adminDb = databaseId
+    ? getFirestore(adminApp, databaseId)
+    : getFirestore(adminApp);
   adminAuth = getAuth(adminApp);
 }
 
