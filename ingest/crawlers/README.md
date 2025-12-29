@@ -8,6 +8,7 @@ Automated data collectors that fetch public notifications and disruptions from e
 - **sofia-bg** - Scrapes municipal repair announcements and traffic changes from Sofia.bg
 - **sofiyska-voda** - Fetches water supply disruptions from Sofiyska Voda's ArcGIS API
 - **toplo-bg** - Fetches heating infrastructure incidents from Toplo.bg with pre-geocoded polygons
+- **erm-zapad** - Fetches power outage incidents from ERM-Zapad for София-град municipalities
 
 ## How They Work
 
@@ -26,6 +27,7 @@ npx tsx crawl --source rayon-oborishte-bg
 npx tsx crawl --source sofiyska-voda
 npx tsx crawl --source toplo-bg
 npx tsx crawl --source sofia-bg
+npx tsx crawl --source erm-zapad
 
 # List available sources
 npx tsx crawl --help

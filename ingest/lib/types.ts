@@ -49,11 +49,20 @@ export interface ExtractedData {
 }
 
 // GeoJSON Types
-export type GeoJSONGeometry = GeoJSONPoint | GeoJSONLineString | GeoJSONPolygon;
+export type GeoJSONGeometry =
+  | GeoJSONPoint
+  | GeoJSONMultiPoint
+  | GeoJSONLineString
+  | GeoJSONPolygon;
 
 export interface GeoJSONPoint {
   type: "Point";
   coordinates: [number, number]; // [longitude, latitude]
+}
+
+export interface GeoJSONMultiPoint {
+  type: "MultiPoint";
+  coordinates: [number, number][]; // array of [longitude, latitude]
 }
 
 export interface GeoJSONLineString {

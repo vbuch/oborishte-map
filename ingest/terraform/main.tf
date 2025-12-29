@@ -135,6 +135,13 @@ locals {
       timeout      = "1800s"
       description  = "Crawl Toplo BG"
     }
+    erm-zapad = {
+      source       = "erm-zapad"
+      schedule     = var.schedules.crawl_erm_zapad
+      memory       = "512Mi"
+      timeout      = "1800s"
+      description  = "Crawl ERM-Zapad power outages"
+    }
   }
 }
 

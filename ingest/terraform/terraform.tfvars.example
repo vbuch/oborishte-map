@@ -24,6 +24,7 @@ region             = "europe-west1"
 #   crawl_sofia           = "0 7 * * *"
 #   crawl_sofiyska_voda   = "0 8 * * *"
 #   crawl_toplo           = "0 9 * * *"
+#   crawl_erm_zapad       = "0 9 * * *"
 #   ingest                = "0 10 * * *"
 #   notify                = "0 11 * * *"
 # }

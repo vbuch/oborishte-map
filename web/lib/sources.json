@@ -18,5 +18,10 @@
     "id": "sofia-bg",
     "url": "https://www.sofia.bg/",
     "name": "Столична община"
+  },
+  {
+    "id": "erm-zapad",
+    "url": "https://info.ermzapad.bg/",
+    "name": "ЕРМ Запад"
   }
 ]
