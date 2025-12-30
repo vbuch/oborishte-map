@@ -87,7 +87,6 @@ export async function crawl(dryRun = false): Promise<void> {
           console.log(`✅ Saved: ${doc.title}`);
           summary.saved++;
         } else {
-          console.log(`⏭️  Skipped (exists): ${doc.title}`);
           summary.skipped++;
         }
       }
@@ -98,10 +97,9 @@ export async function crawl(dryRun = false): Promise<void> {
   }
 
   // Print summary
-  console.log("\n📈 Summary:");
-  console.log(`   Saved: ${summary.saved}`);
-  console.log(`   Skipped: ${summary.skipped}`);
-  console.log(`   Failed: ${summary.failed}`);
+  console.log(
+    `\n📈 Saved: ${summary.saved}; Skipped: ${summary.skipped}; Failed: ${summary.failed}`
+  );
 
   // Exit with error if all failed
   if (summary.failed > 0 && summary.saved === 0 && summary.skipped === 0) {

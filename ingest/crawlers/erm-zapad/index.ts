@@ -226,7 +226,6 @@ async function processMunicipality(
           console.log(`   ✅ Saved: ${doc.title}`);
           summary.saved++;
         } else {
-          console.log(`   ⏭️  Skipped (exists): ${doc.title}`);
           summary.skipped++;
         }
       } catch (error) {
@@ -282,10 +281,9 @@ async function crawl(): Promise<void> {
 
     // Final summary
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`\n✅ Crawl complete in ${duration}s`);
-    console.log(`   Saved: ${totalSummary.saved}`);
-    console.log(`   Skipped: ${totalSummary.skipped}`);
-    console.log(`   Failed: ${totalSummary.failed}`);
+    console.log(
+      `\n✅ Crawl complete in ${duration}s. Saved: ${totalSummary.saved}; Skipped: ${totalSummary.skipped}; Failed: ${totalSummary.failed}`
+    );
 
     // Exit with error if all failed
     if (
