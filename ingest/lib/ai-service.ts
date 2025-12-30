@@ -5,33 +5,117 @@ import { ExtractedData } from "./types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY || "" });
 
+// Read the message filter prompt template
+let filterSystemInstruction: string;
+try {
+  filterSystemInstruction = readFileSync(
+    join(process.cwd(), "prompts/message-filter.md"),
+    "utf-8"
+  );
+} catch (error) {
+  console.error("Failed to load message filter prompt template:", error);
+  throw new Error("Message filter prompt template file not found");
+}
+
 // Read the data extraction prompt template
 // Uses Overpass-optimized prompt for hybrid geocoding (Google for pins, Overpass for streets)
-let systemInstruction: string;
+let extractionSystemInstruction: string;
 try {
-  systemInstruction = readFileSync(
+  extractionSystemInstruction = readFileSync(
     join(process.cwd(), "prompts/data-extraction-overpass.md"),
     "utf-8"
   );
 } catch (error) {
-  console.error("Failed to load prompt template:", error);
-  throw new Error("Prompt template file not found");
+  console.error("Failed to load data extraction prompt template:", error);
+  throw new Error("Data extraction prompt template file not found");
 }
 
-export async function extractAddresses(
+export interface FilterResult {
+  isRelevant: boolean;
+  normalizedText: string;
+}
+
+export async function filterMessage(
+  text: string
+): Promise<FilterResult | null> {
+  try {
+    // Validate message
+    if (!text || typeof text !== "string") {
+      console.error("Invalid text parameter for message filtering");
+      return null;
+    }
+
+    // Validate message length
+    if (text.length > 10000) {
+      console.error(
+        "Text is too long for message filtering (max 10000 characters)"
+      );
+      return null;
+    }
+
+    // Validate required environment variable
+    const model = process.env.GOOGLE_AI_MODEL;
+    if (!model) {
+      console.error("GOOGLE_AI_MODEL environment variable is not set");
+      return null;
+    }
+
+    // Make request to Gemini API
+    const response = await ai.models.generateContent({
+      model: model,
+      contents: text,
+      config: {
+        systemInstruction: filterSystemInstruction,
+      },
+    });
+    const responseText = response.text || "";
+
+    // Parse the JSON response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsedResponse = JSON.parse(jsonMatch[0]);
+
+        // Validate response structure
+        if (
+          typeof parsedResponse.isRelevant !== "boolean" ||
+          typeof parsedResponse.normalizedText !== "string"
+        ) {
+          console.error("Invalid filter response structure:", parsedResponse);
+          return null;
+        }
+
+        return {
+          isRelevant: parsedResponse.isRelevant,
+          normalizedText: parsedResponse.normalizedText,
+        };
+      } catch (parseError) {
+        console.error("Failed to parse JSON response from AI:", parseError);
+        return null;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error filtering message:", error);
+    return null;
+  }
+}
+
+export async function extractStructuredData(
   text: string
 ): Promise<ExtractedData | null> {
   try {
     // Validate message
     if (!text || typeof text !== "string") {
-      console.error("Invalid text parameter for address extraction");
+      console.error("Invalid text parameter for data extraction");
       return null;
     }
 
     // Validate message length
     if (text.length > 5000) {
       console.error(
-        "Text is too long for address extraction (max 5000 characters)"
+        "Text is too long for data extraction (max 5000 characters)"
       );
       return null;
     }
@@ -51,7 +135,7 @@ export async function extractAddresses(
       model: model,
       contents: sanitizedText,
       config: {
-        systemInstruction,
+        systemInstruction: extractionSystemInstruction,
       },
     });
     const responseText = response.text || "";
@@ -116,6 +200,7 @@ export async function extractAddresses(
           responsible_entity: parsedResponse.responsible_entity || "",
           pins: validPins,
           streets: validStreets,
+          markdown_text: parsedResponse.markdown_text || "",
         };
 
         return extractedData;
@@ -127,7 +212,10 @@ export async function extractAddresses(
 
     return null;
   } catch (error) {
-    console.error("Error extracting addresses:", error);
+    console.error("Error extracting structured data:", error);
     return null;
   }
 }
+
+// Legacy export for backward compatibility
+export const extractAddresses = extractStructuredData;

@@ -98,12 +98,14 @@ A markdown-formatted version of the original announcement text for improved disp
 
 - **Purpose**: Enhance readability and presentation while preserving all original content.
 - **Requirements**:
+  - **CRITICAL: Include the reason/purpose** - If the message explains WHY the traffic organization exists (e.g., "за рекламен клип", "за ремонт", "за празнично богослужение"), it MUST be included as a heading at the start (### Reason/Purpose)
   - Use markdown formatting: headings (# ## ###), **bold**, _italic_, lists (- or 1.), paragraphs, and line breaks.
   - Preserve ALL original content exactly - do not add information, do not omit information.
   - Structure the content logically with appropriate headings and emphasis.
   - Use bold for important terms like dates, locations, responsible entities.
   - Break up long paragraphs for better readability.
 - **Example transformations**:
+  - Reason/Purpose → ### Организация на движението за рекламен клип
   - Entity names → **Топлофикация София ЕАД**
   - Dates → **от 08:00 до 18:00 на 25.12.2025 г.**
   - Section headers → ### Ограничения на движението

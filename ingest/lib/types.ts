@@ -9,6 +9,11 @@ export interface Message {
   finalizedAt?: Date | string;
   source?: string;
   sourceUrl?: string;
+  markdownText?: string;
+  messageFilter?: {
+    isRelevant: boolean;
+    normalizedText: string;
+  };
 }
 
 export interface Address {

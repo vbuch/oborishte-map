@@ -4,12 +4,7 @@ import {
   GeoJSONFeatureCollection,
   Message,
 } from "@/lib/types";
-import {
-  storeIncomingMessage,
-  storeAddressesInMessage,
-  storeGeocodingInMessage,
-  storeGeoJsonInMessage,
-} from "./db";
+import { storeIncomingMessage, updateMessage } from "./db";
 
 export { extractAddressesFromMessage } from "./extract-addresses";
 export {
@@ -20,6 +15,7 @@ export { convertMessageGeocodingToGeoJson } from "./convert-to-geojson";
 export { filterOutlierCoordinates } from "./filter-outliers";
 export { verifyAuthToken, validateMessageText } from "./helpers";
 export { buildMessageResponse } from "./build-response";
+export { filterAndNormalizeMessage } from "./filter-message";
 
 export interface MessageIngestOptions {
   /**
@@ -61,7 +57,7 @@ export async function messageIngest(
   userEmail: string | null,
   options: MessageIngestOptions = {}
 ): Promise<Message> {
-  // Step 1: Store incoming message
+  // Store incoming message
   const messageId = await storeIncomingMessage(
     text,
     userId,
@@ -76,23 +72,68 @@ export async function messageIngest(
   let addresses: Address[] = [];
   let geoJson: GeoJSONFeatureCollection | null =
     options.precomputedGeoJson ?? null;
+  let normalizedText = text;
 
   if (!hasPrecomputedGeoJson) {
-    // Step 2: Extract addresses from message
+    // Filter message to check relevance and normalize text
+    const { filterAndNormalizeMessage } = await import("./filter-message");
+    const filterResult = await filterAndNormalizeMessage(text);
+
+    if (!filterResult) {
+      console.error("❌ Failed to filter message, marking as finalized");
+      await updateMessage(messageId, { finalizedAt: new Date() });
+      throw new Error("Message filtering failed");
+    }
+
+    // Store filter result
+    await updateMessage(messageId, {
+      messageFilter: filterResult,
+    });
+
+    // If message is not relevant to public infrastructure, finalize and return
+    if (!filterResult.isRelevant) {
+      console.log(
+        "ℹ️  Message filtered as irrelevant (transport-only), marking as finalized"
+      );
+      await updateMessage(messageId, { finalizedAt: new Date() });
+
+      const { buildMessageResponse } = await import("./build-response");
+      return await buildMessageResponse(messageId, text, [], null, null);
+    }
+
+    // Use normalized text for extraction
+    normalizedText = filterResult.normalizedText || text;
+
+    // Extract structured data from normalized text
     const { extractAddressesFromMessage } = await import("./extract-addresses");
-    extractedData = await extractAddressesFromMessage(text);
+    extractedData = await extractAddressesFromMessage(normalizedText);
 
-    // Step 3: Store extracted addresses in message
-    await storeAddressesInMessage(messageId, extractedData);
+    // Store extracted data and markdown text together
+    const markdownText = extractedData?.markdown_text || "";
+    await updateMessage(messageId, {
+      extractedData,
+      markdownText,
+    });
 
-    // Step 4: Geocode addresses
+    // If extraction failed, finalize and return
+    if (!extractedData) {
+      console.error(
+        "❌ Failed to extract data from message, marking as finalized"
+      );
+      await updateMessage(messageId, { finalizedAt: new Date() });
+
+      const { buildMessageResponse } = await import("./build-response");
+      return await buildMessageResponse(messageId, text, [], null, null);
+    }
+
+    // Geocode addresses
     const { geocodeAddressesFromExtractedData } = await import(
       "./geocode-addresses"
     );
     const { preGeocodedMap, addresses: geocodedAddresses } =
       await geocodeAddressesFromExtractedData(extractedData);
 
-    // Step 4.5: Filter outlier coordinates
+    // Filter outlier coordinates
     const { filterOutlierCoordinates } = await import("./filter-outliers");
     addresses = filterOutlierCoordinates(geocodedAddresses);
 
@@ -104,10 +145,12 @@ export async function messageIngest(
       }
     }
 
-    // Step 5: Store geocoding results in message
-    await storeGeocodingInMessage(messageId, addresses);
+    // Store geocoding results in message
+    if (addresses.length > 0) {
+      await updateMessage(messageId, { addresses });
+    }
 
-    // Step 6: Convert to GeoJSON
+    // Convert to GeoJSON
     const { convertMessageGeocodingToGeoJson } = await import(
       "./convert-to-geojson"
     );
@@ -116,17 +159,20 @@ export async function messageIngest(
       preGeocodedMap
     );
   } else if (options.markdownText) {
-    // When using precomputed GeoJSON, still store markdown_text if provided
+    // When using precomputed GeoJSON, store markdown_text if provided
     extractedData = {
       responsible_entity: "",
       pins: [],
       streets: [],
       markdown_text: options.markdownText,
     };
-    await storeAddressesInMessage(messageId, extractedData);
+    await updateMessage(messageId, {
+      markdownText: options.markdownText,
+      extractedData,
+    });
   }
 
-  // Step 6.5: Apply boundary filtering if provided
+  // Apply boundary filtering if provided
   if (options.boundaryFilter && geoJson) {
     const { filterFeaturesByBoundaries } = await import(
       "../lib/boundary-utils"
@@ -149,8 +195,10 @@ export async function messageIngest(
     geoJson = filteredGeoJson;
   }
 
-  // Step 7: Store GeoJSON in message (either generated or provided)
-  await storeGeoJsonInMessage(messageId, geoJson);
+  // Store GeoJSON and finalize message
+  if (geoJson) {
+    await updateMessage(messageId, { geoJson, finalizedAt: new Date() });
+  }
 
   // Build and return response
   const { buildMessageResponse } = await import("./build-response");

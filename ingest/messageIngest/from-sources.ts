@@ -33,6 +33,7 @@ interface IngestSummary {
   outsideBounds: number;
   ingested: number;
   alreadyIngested: number;
+  filtered: number;
   failed: number;
   errors: Array<{ url: string; error: string }>;
 }
@@ -255,6 +256,7 @@ export async function ingest(
     outsideBounds,
     ingested: 0,
     alreadyIngested: 0,
+    filtered: 0,
     failed: 0,
     errors: [],
   };
@@ -279,11 +281,14 @@ export async function ingest(
       const errorMessage =
         error instanceof Error ? error.message : String(error);
 
-      // Don't log as error if it's just outside boundaries
+      // Don't log as error if it's just outside boundaries or filtered as irrelevant
       if (errorMessage.includes("No features within specified boundaries")) {
         console.log(
           `   ⏭️  ${source.title}: Outside boundaries after geocoding`
         );
+      } else if (errorMessage.includes("Message filtering failed")) {
+        summary.filtered++;
+        console.log(`   ℹ️  ${source.title}: Filtered as irrelevant`);
       } else {
         summary.errors.push({ url: source.url, error: errorMessage });
         console.error(`   ❌ Failed to ingest ${source.title}:`, errorMessage);
@@ -311,6 +316,14 @@ function logSummary(summary: IngestSummary, dryRun: boolean): void {
   } else {
     console.log(`✅ Successfully ingested: ${summary.ingested}`);
     console.log(`⏭️  Already ingested (skipped): ${summary.alreadyIngested}`);
+    if (summary.filtered > 0) {
+      console.log(`🚦 Filtered as irrelevant: ${summary.filtered}`);
+      const filterPercentage = (
+        (summary.filtered / summary.withinBounds) *
+        100
+      ).toFixed(1);
+      console.log(`   (${filterPercentage}% of messages within bounds)`);
+    }
     if (summary.failed > 0) {
       console.log(`❌ Failed: ${summary.failed}`);
     }
