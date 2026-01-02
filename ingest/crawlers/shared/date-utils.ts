@@ -100,6 +100,75 @@ export function parseBulgarianDateTime(dateStr: string): Date {
 }
 
 /**
+ * Parse Bulgarian short date format with 2-digit year (DD.MM.YY) to ISO string
+ * Optionally combines with time (HH:MM)
+ *
+ * @param dateStr - Date string in format "DD.MM.YY" (e.g., "17.07.25")
+ * @param timeStr - Optional time string in format "HH:MM" (e.g., "18:48")
+ * @returns ISO date string
+ *
+ * @example
+ * parseShortBulgarianDateTime("17.07.25", "18:48") // "2025-07-17T18:48:00.000Z" (in Sofia timezone)
+ * parseShortBulgarianDateTime("17.07.25") // "2025-07-17T00:00:00.000Z" (in Sofia timezone)
+ */
+export function parseShortBulgarianDateTime(
+  dateStr: string,
+  timeStr?: string
+): string {
+  try {
+    // Format: "DD.MM.YY" optionally with "HH:MM"
+    const normalized = dateStr.trim().replace(/\//g, ".");
+    const parts = normalized.split(".");
+
+    if (parts.length === 3) {
+      const [day, month, shortYear] = parts;
+
+      // Convert 2-digit year to 4-digit year (always assume 20XX)
+      const year = `20${shortYear}`;
+
+      // Parse time if provided
+      let hour = "00";
+      let minute = "00";
+      if (timeStr) {
+        const timeParts = timeStr.trim().split(":");
+        if (timeParts.length === 2) {
+          hour = timeParts[0].padStart(2, "0");
+          minute = timeParts[1].padStart(2, "0");
+        }
+      }
+
+      // Create date in local timezone (assumed to be Europe/Sofia)
+      const date = new Date(
+        Number.parseInt(year, 10),
+        Number.parseInt(month, 10) - 1, // 0-indexed months
+        Number.parseInt(day, 10),
+        Number.parseInt(hour, 10),
+        Number.parseInt(minute, 10),
+        0,
+        0
+      );
+
+      if (!Number.isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    }
+
+    console.warn(
+      `⚠️ Unable to parse short date: ${dateStr} ${
+        timeStr || ""
+      }, using current date`
+    );
+    return new Date().toISOString();
+  } catch (error) {
+    console.error(
+      `❌ Error parsing short date: ${dateStr} ${timeStr || ""}`,
+      error
+    );
+    return new Date().toISOString();
+  }
+}
+
+/**
  * Format date for display in Bulgarian format
  *
  * @param date - Date object to format

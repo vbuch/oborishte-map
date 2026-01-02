@@ -5,6 +5,7 @@ Automated data collectors that fetch public notifications and disruptions from e
 ## Available Crawlers
 
 - **rayon-oborishte-bg** - Scrapes repair/disruption notices from Rayon Oborishte's website
+- **mladost-bg** - Scrapes repair/disruption notices from Rayon Mladost's website
 - **sofia-bg** - Scrapes municipal repair announcements and traffic changes from Sofia.bg
 - **sofiyska-voda** - Fetches water supply disruptions from Sofiyska Voda's ArcGIS API
 - **toplo-bg** - Fetches heating infrastructure incidents from Toplo.bg with pre-geocoded polygons
@@ -24,6 +25,7 @@ Each crawler:
 ```bash
 # Run a specific crawler
 npx tsx crawl --source rayon-oborishte-bg
+npx tsx crawl --source mladost-bg
 npx tsx crawl --source sofiyska-voda
 npx tsx crawl --source toplo-bg
 npx tsx crawl --source sofia-bg

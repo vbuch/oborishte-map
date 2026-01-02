@@ -12,7 +12,8 @@ export function buildWebPageSourceDocument(
   title: string,
   dateText: string,
   contentHtml: string,
-  sourceType: string
+  sourceType: string,
+  customDateParser?: (dateText: string) => string
 ): {
   url: string;
   title: string;
@@ -31,8 +32,10 @@ export function buildWebPageSourceDocument(
   // Convert HTML to Markdown
   const message = turndownService.turndown(contentHtml);
 
-  // Parse date to ISO format
-  const datePublished = parseBulgarianDate(dateText);
+  // Parse date to ISO format (use custom parser if provided)
+  const datePublished = customDateParser
+    ? customDateParser(dateText)
+    : parseBulgarianDate(dateText);
 
   return {
     url,

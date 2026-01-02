@@ -3,6 +3,7 @@ import {
   formatBulgarianDateTime,
   parseBulgarianDate,
   parseBulgarianDateTime,
+  parseShortBulgarianDateTime,
 } from "./date-utils";
 
 describe("parseBulgarianDate", () => {
@@ -209,5 +210,92 @@ describe("formatBulgarianDateTime", () => {
     const formatted = formatBulgarianDateTime(parsed);
 
     expect(formatted).toBe(original);
+  });
+});
+
+describe("parseShortBulgarianDateTime", () => {
+  it("should parse date with 2-digit year and time", () => {
+    const isoDate = parseShortBulgarianDateTime("17.07.25", "18:48");
+
+    const date = new Date(isoDate);
+    expect(date.getDate()).toBe(17);
+    expect(date.getMonth()).toBe(6); // July (0-indexed)
+    expect(date.getFullYear()).toBe(2025);
+    expect(date.getHours()).toBe(18);
+    expect(date.getMinutes()).toBe(48);
+  });
+
+  it("should parse date with 2-digit year without time", () => {
+    const isoDate = parseShortBulgarianDateTime("17.07.25");
+
+    const date = new Date(isoDate);
+    expect(date.getDate()).toBe(17);
+    expect(date.getMonth()).toBe(6); // July
+    expect(date.getFullYear()).toBe(2025);
+    expect(date.getHours()).toBe(0);
+    expect(date.getMinutes()).toBe(0);
+  });
+
+  it("should parse date with leading zeros", () => {
+    const isoDate = parseShortBulgarianDateTime("01.01.26", "09:05");
+
+    const date = new Date(isoDate);
+    expect(date.getDate()).toBe(1);
+    expect(date.getMonth()).toBe(0); // January
+    expect(date.getFullYear()).toBe(2026);
+    expect(date.getHours()).toBe(9);
+    expect(date.getMinutes()).toBe(5);
+  });
+
+  it("should always assume 20XX for 2-digit year", () => {
+    // Test with year 99 (should be 2099, not 1999)
+    const isoDate = parseShortBulgarianDateTime("31.12.99", "23:59");
+
+    const date = new Date(isoDate);
+    expect(date.getFullYear()).toBe(2099);
+  });
+
+  it("should handle slash separators", () => {
+    const isoDate = parseShortBulgarianDateTime("15/06/25", "14:30");
+
+    const date = new Date(isoDate);
+    expect(date.getDate()).toBe(15);
+    expect(date.getMonth()).toBe(5); // June
+    expect(date.getFullYear()).toBe(2025);
+  });
+
+  it("should return current date ISO string for invalid format", () => {
+    const before = new Date();
+    const isoDate = parseShortBulgarianDateTime("invalid-date");
+    const after = new Date();
+
+    const parsed = new Date(isoDate);
+    expect(parsed.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(parsed.getTime()).toBeLessThanOrEqual(after.getTime());
+  });
+
+  it("should return current date ISO string for empty string", () => {
+    const before = new Date();
+    const isoDate = parseShortBulgarianDateTime("");
+    const after = new Date();
+
+    const parsed = new Date(isoDate);
+    expect(parsed.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(parsed.getTime()).toBeLessThanOrEqual(after.getTime());
+  });
+
+  it("should handle time without leading zeros", () => {
+    const isoDate = parseShortBulgarianDateTime("17.07.25", "9:5");
+
+    const date = new Date(isoDate);
+    expect(date.getHours()).toBe(9);
+    expect(date.getMinutes()).toBe(5);
+  });
+
+  it("should return ISO string format", () => {
+    const isoDate = parseShortBulgarianDateTime("17.07.25", "18:48");
+
+    // ISO string should match YYYY-MM-DDTHH:mm:ss.sssZ format
+    expect(isoDate).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
   });
 });
